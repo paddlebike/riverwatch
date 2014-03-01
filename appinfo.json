@@ -1,0 +1,23 @@
+{
+  "uuid": "c92db639-a931-40c3-8575-623fa9415f96",
+  "shortName": "Riverwatch",
+  "longName": "Riverwatch",
+  "companyName": "paddlebike",
+  "versionCode": 1,
+  "versionLabel": "1.0.0",
+  "watchapp": {
+    "watchface": true
+  },
+"appKeys": {
+    "gauge": 5,
+    "rTemp": 4,
+    "flow": 3,
+    "wCity": 2,
+    "temperature": 1,
+    "descr": 0
+  },
+
+  "resources": {
+    "media": []
+  }
+}
