@@ -5,7 +5,7 @@ function fetchLFWeather() {
   console.log("fetchLFWeather - Called ");
   var response;
   var req = new XMLHttpRequest();
-  req.open('GET', "http://api.openweathermap.org/data/2.5/forecast?id=4369976&cnt=1", true);
+  req.open('GET', "http://api.openweathermap.org/data/2.5/forecast?id=4369976&cnt=1&APPID=9074a4be3ea0765aaa0f1a4873e80c99", true);
   req.onload = function(e) {
     if (req.readyState == 4) {
       if(req.status == 200) {
@@ -16,12 +16,10 @@ function fetchLFWeather() {
           var weatherResult = response.list[0];
           temperature = Math.round(weatherResult.main.temp - 273.15);
           descr = weatherResult.weather[0].main;
-          city = response.city.name;
           console.log(temperature);
           console.log(descr);
           console.log(city);
           Pebble.sendAppMessage({
-            "wCity":city, 
             "descr":descr,
             "temperature":temperature + "\u00B0C"
           });
@@ -130,7 +128,7 @@ function fetchWater(gauge) {
         console.log(h2temp);
         var combo = height + 'ft ' + h2temp + '\u00B0C';
         console.log(combo);
-        Pebble.sendAppMessage({"gauge":"Little Falls" ,"flow":combo});
+        Pebble.sendAppMessage({"flow":combo});
     } else {
       console.log("Error");
     }

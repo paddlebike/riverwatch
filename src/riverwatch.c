@@ -7,7 +7,6 @@ static TextLayer *time_layer;
 static TextLayer *city_layer;
 static TextLayer *descr_layer;
 static TextLayer *temperature_layer;
-static TextLayer *gauge_name_layer;
 static TextLayer *river_height_layer;
 static TextLayer *river_temp_layer;
 
@@ -15,20 +14,16 @@ static AppSync sync;
 static uint8_t sync_buffer[256];
 
 enum WeatherKey {
-  RIVER_GAUGE_KEY         = 5,
-  RIVER_TEMP_KEY          = 4,
-  RIVER_HEIGHT_KEY        = 3,
-  WEATHER_CITY_KEY        = 2,  // TUPLE_CSTRING
+  RIVER_TEMP_KEY          = 3,
+  RIVER_HEIGHT_KEY        = 2,
   WEATHER_TEMPERATURE_KEY = 1,  // TUPLE_CSTRING
   WEATHER_DESCR_KEY       = 0,  // TUPLE_CSTRING
 };
 
 /*
 "appKeys": {
-    "gauge":       5,
-    "rTemp":       4,
-    "flow":        3,
-    "city":        2,
+    "rTemp":       3,
+    "flow":        2,
     "temperature": 1,
     "descr":       0
   },
@@ -43,7 +38,7 @@ void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
 
 
   // TODO: Only update the date when it's changed.
-  strftime(date_text, sizeof(date_text), "%B %e", tick_time);
+  strftime(date_text, sizeof(date_text), "%a %b %e", tick_time);
   text_layer_set_text(date_layer, date_text);
 
 
@@ -71,9 +66,6 @@ static void sync_error_callback(DictionaryResult dict_error, AppMessageResult ap
 static void sync_tuple_changed_callback(const uint32_t key, const Tuple* new_tuple, const Tuple* old_tuple, void* context) {
   //APP_LOG(APP_LOG_LEVEL_INFO, "sync_tuple_changed_callback: key: %d val: %s", (int)key, new_tuple->value->cstring);
   switch (key) {
-    case WEATHER_CITY_KEY:
-      text_layer_set_text(city_layer, new_tuple->value->cstring);
-      break;
 
     case WEATHER_DESCR_KEY:
       text_layer_set_text(descr_layer, new_tuple->value->cstring);
@@ -81,10 +73,6 @@ static void sync_tuple_changed_callback(const uint32_t key, const Tuple* new_tup
 
     case WEATHER_TEMPERATURE_KEY:
       text_layer_set_text(temperature_layer, new_tuple->value->cstring);
-      break;
-
-    case RIVER_GAUGE_KEY:
-      text_layer_set_text(gauge_name_layer, new_tuple->value->cstring);
       break;
 
     case RIVER_HEIGHT_KEY:
@@ -116,48 +104,42 @@ static void send_cmd(void) {
 static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
 
-  date_layer = text_layer_create(GRect(10, 10, 134, 32));
+  date_layer = text_layer_create(GRect(10, 10, 150, 32));
   text_layer_set_text_color(date_layer, GColorWhite);
   text_layer_set_background_color(date_layer, GColorClear);
-  text_layer_set_font(date_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+  text_layer_set_font(date_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_21)));
   text_layer_set_text_alignment(date_layer, GTextAlignmentLeft);
+  //text_layer_set_text(date_layer, "February 28");
   layer_add_child(window_layer, text_layer_get_layer(date_layer));
 
-  time_layer = text_layer_create(GRect(10, 44, 134, 32));
+  time_layer = text_layer_create(GRect(10, 44, 134, 56));
   text_layer_set_text_color(time_layer, GColorWhite);
   text_layer_set_background_color(time_layer, GColorClear);
-  text_layer_set_font(time_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+  text_layer_set_font(time_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_BOLD_SUBSET_49)));
   text_layer_set_text_alignment(time_layer, GTextAlignmentLeft);
   layer_add_child(window_layer, text_layer_get_layer(time_layer));
 
-  city_layer = text_layer_create(GRect(5, 81, 134, 17));
+  city_layer = text_layer_create(GRect(5, 105, 134, 17));
   text_layer_set_text_color(city_layer, GColorWhite);
   text_layer_set_background_color(city_layer, GColorClear);
   text_layer_set_font(city_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
-  text_layer_set_text(city_layer, "Wolf Trap");
   text_layer_set_text_alignment(city_layer, GTextAlignmentLeft);
+  text_layer_set_text(city_layer, "Little Falls");
   layer_add_child(window_layer, text_layer_get_layer(city_layer));
 
-  descr_layer = text_layer_create(GRect(10, 98, 94, 28));
+  descr_layer = text_layer_create(GRect(10, 115, 94, 28));
   text_layer_set_text_color(descr_layer, GColorWhite);
   text_layer_set_background_color(descr_layer, GColorClear);
   text_layer_set_font(descr_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(descr_layer, GTextAlignmentLeft);
   layer_add_child(window_layer, text_layer_get_layer(descr_layer));
 
-  temperature_layer = text_layer_create(GRect(90, 98, 94, 28));
+  temperature_layer = text_layer_create(GRect(90, 115, 94, 28));
   text_layer_set_text_color(temperature_layer, GColorWhite);
   text_layer_set_background_color(temperature_layer, GColorClear);
   text_layer_set_font(temperature_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(temperature_layer, GTextAlignmentLeft);
   layer_add_child(window_layer, text_layer_get_layer(temperature_layer));
-
-  gauge_name_layer = text_layer_create(GRect(5, 126, 134, 17));
-  text_layer_set_text_color(gauge_name_layer, GColorWhite);
-  text_layer_set_background_color(gauge_name_layer, GColorClear);
-  text_layer_set_font(gauge_name_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
-  text_layer_set_text_alignment(gauge_name_layer, GTextAlignmentLeft);
-  layer_add_child(window_layer, text_layer_get_layer(gauge_name_layer));
 
   river_height_layer = text_layer_create(GRect(10, 140, 134, 28));
   text_layer_set_text_color(river_height_layer, GColorWhite);
@@ -174,10 +156,8 @@ static void window_load(Window *window) {
   layer_add_child(window_layer, text_layer_get_layer(river_temp_layer));
 
   Tuplet initial_values[] = {
-    TupletCString(WEATHER_CITY_KEY, "Wolf Trap"),
     TupletCString(WEATHER_DESCR_KEY, "Look"),
     TupletCString(WEATHER_TEMPERATURE_KEY, "1234\u00B0C"),
-    TupletCString(RIVER_GAUGE_KEY, "Little Bitty Falls"),
     TupletCString(RIVER_HEIGHT_KEY, "0.0ft 0.0\u00B0C"),
     TupletCString(RIVER_HEIGHT_KEY, "99\u00B0C"),
   };
@@ -196,7 +176,6 @@ static void window_unload(Window *window) {
   text_layer_destroy(city_layer);
   text_layer_destroy(temperature_layer);
   text_layer_destroy(river_height_layer);
-  text_layer_destroy(gauge_name_layer);
 }
 
 static void init(void) {

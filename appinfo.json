@@ -9,15 +9,25 @@
     "watchface": true
   },
 "appKeys": {
-    "gauge": 5,
-    "rTemp": 4,
-    "flow": 3,
-    "wCity": 2,
+    "rTemp": 3,
+    "flow": 2,
     "temperature": 1,
     "descr": 0
   },
 
   "resources": {
-    "media": []
+    "media": [
+    {
+        "type": "font",
+        "name": "FONT_ROBOTO_CONDENSED_21",
+        "file": "fonts/Roboto-Condensed.ttf"
+      },
+      {
+        "characterRegex": "[:0-9]",
+        "type": "font",
+        "name": "FONT_ROBOTO_BOLD_SUBSET_49",
+        "file": "fonts/Roboto-Bold.ttf"
+      }
+      ]
   }
 }
