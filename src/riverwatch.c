@@ -2,6 +2,8 @@
 
 static Window *window;
 
+static TextLayer *date_layer;
+static TextLayer *time_layer;
 static TextLayer *city_layer;
 static TextLayer *descr_layer;
 static TextLayer *temperature_layer;
@@ -32,6 +34,35 @@ enum WeatherKey {
   },
   */
 
+void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
+  // Need to be static because they're used by the system later.
+  static char time_text[] = "00:00";
+  static char date_text[] = "Xxxxxxxxx 00";
+
+  char *time_format;
+
+
+  // TODO: Only update the date when it's changed.
+  strftime(date_text, sizeof(date_text), "%B %e", tick_time);
+  text_layer_set_text(date_layer, date_text);
+
+
+  if (clock_is_24h_style()) {
+    time_format = "%R";
+  } else {
+    time_format = "%I:%M";
+  }
+
+  strftime(time_text, sizeof(time_text), time_format, tick_time);
+
+  // Kludge to handle lack of non-padded hour format string
+  // for twelve hour clock.
+  if (!clock_is_24h_style() && (time_text[0] == '0')) {
+    memmove(time_text, &time_text[1], sizeof(time_text) - 1);
+  }
+
+  text_layer_set_text(time_layer, time_text);
+}
 
 static void sync_error_callback(DictionaryResult dict_error, AppMessageResult app_message_error, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Sync Error: %d", app_message_error);
@@ -84,6 +115,20 @@ static void send_cmd(void) {
 
 static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
+
+  date_layer = text_layer_create(GRect(10, 10, 134, 32));
+  text_layer_set_text_color(date_layer, GColorWhite);
+  text_layer_set_background_color(date_layer, GColorClear);
+  text_layer_set_font(date_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+  text_layer_set_text_alignment(date_layer, GTextAlignmentLeft);
+  layer_add_child(window_layer, text_layer_get_layer(date_layer));
+
+  time_layer = text_layer_create(GRect(10, 44, 134, 32));
+  text_layer_set_text_color(time_layer, GColorWhite);
+  text_layer_set_background_color(time_layer, GColorClear);
+  text_layer_set_font(time_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+  text_layer_set_text_alignment(time_layer, GTextAlignmentLeft);
+  layer_add_child(window_layer, text_layer_get_layer(time_layer));
 
   city_layer = text_layer_create(GRect(5, 81, 134, 17));
   text_layer_set_text_color(city_layer, GColorWhite);
@@ -145,7 +190,8 @@ static void window_load(Window *window) {
 
 static void window_unload(Window *window) {
   app_sync_deinit(&sync);
-
+  text_layer_destroy(date_layer);
+  text_layer_destroy(time_layer);
   text_layer_destroy(descr_layer);
   text_layer_destroy(city_layer);
   text_layer_destroy(temperature_layer);
@@ -162,15 +208,17 @@ static void init(void) {
     .unload = window_unload
   });
 
-  const int inbound_size = 64;
-  const int outbound_size = 64;
+  const int inbound_size = sizeof(sync_buffer);
+  const int outbound_size = sizeof(sync_buffer);
   app_message_open(inbound_size, outbound_size);
 
   const bool animated = true;
   window_stack_push(window, animated);
+  tick_timer_service_subscribe(MINUTE_UNIT, handle_minute_tick);
 }
 
 static void deinit(void) {
+  tick_timer_service_unsubscribe();
   window_destroy(window);
 }
 

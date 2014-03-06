@@ -1,7 +1,42 @@
 
+//var gauges = {};
+function fetchLFWeather() {
+  // 9074a4be3ea0765aaa0f1a4873e80c99
+  console.log("fetchLFWeather - Called ");
+  var response;
+  var req = new XMLHttpRequest();
+  req.open('GET', "http://api.openweathermap.org/data/2.5/forecast?id=4369976&cnt=1", true);
+  req.onload = function(e) {
+    if (req.readyState == 4) {
+      if(req.status == 200) {
+        //console.log(req.responseText);
+        response = JSON.parse(req.responseText);
+        var temperature, descr, city;
+        if (response && response.list && response.list.length > 0) {
+          var weatherResult = response.list[0];
+          temperature = Math.round(weatherResult.main.temp - 273.15);
+          descr = weatherResult.weather[0].main;
+          city = response.city.name;
+          console.log(temperature);
+          console.log(descr);
+          console.log(city);
+          Pebble.sendAppMessage({
+            "wCity":city, 
+            "descr":descr,
+            "temperature":temperature + "\u00B0C"
+          });
+        }
 
+      } else {
+        console.log("fetchLFWeather - Status: " + req.status + " State: " + req.readyState);
+      }
+    }
+  }
+  req.send(null);
+}
 
 function fetchWeather(latitude, longitude) {
+  console.log("fetchWeather - Called lat: " + latitude + " lon: " + longitude );
   var response;
   var req = new XMLHttpRequest();
   req.open('GET', "http://api.openweathermap.org/data/2.1/find/city?" +
@@ -28,12 +63,48 @@ function fetchWeather(latitude, longitude) {
         }
 
       } else {
-        console.log("Error");
+        console.log("fetchWeather - Status: " + req.status + " State: " + req.readyState);
       }
     }
   }
   req.send(null);
 }
+
+function processUSGSdata(responseText){
+  console.log('processUSGSdata');
+  var db = JSON.parse(responseText);
+  var ts = db.value.timeSeries;
+  var gauges = new Object();
+  console.log('Gauge count = ' + ts.length);
+  for (var i = 0;i < ts.length; i++){
+    item = ts[i];
+
+    //Get some basic data about the gauge.
+    siteCode = item.sourceInfo.siteCode[0].value;
+//    if (!siteCode in gauges) {
+        site_name = item.sourceInfo.siteName;
+
+        console.log(site_name);
+ 
+        type_num = item.variable.variableCode[0].value.toString();
+        desc     = item.variable.variableDescription;
+        name     = item.variable.unit.unitAbbreviation;
+        valList  = item.values[0].value;
+        value    = valList[valList.length -1].value;
+        time     = valList[valList.length -1].dateTime;
+        prevVal  = valList[valList.length -2].value;
+
+        gauges.siteCode = {'name':name, 'reading':type_num = {'description':desc, 'time':time, 'value':value, 'prevVal':prevVal}};
+        console.log(gauges.siteCode.name);
+        console.log(gauges.siteCode.name.reading.type_num.description);
+//      }
+//      else {
+//        console.log("skipped " + siteCode);
+//      }
+    }
+    return gauges;
+}
+
 
 function fetchWater(gauge) {
   var response;
@@ -46,6 +117,7 @@ function fetchWater(gauge) {
     console.log("fetchWater req.onload CALLED");
     if (req.readyState == 4 && req.status == 200) {
         // console.log('Got response ' + req.responseText);
+        //processUSGSdata(req.responseText);
         response = JSON.parse(req.responseText);
         site_name = response.value.timeSeries[0].sourceInfo.siteName;
         console.log(site_name)
@@ -68,6 +140,7 @@ function fetchWater(gauge) {
 
 function locationSuccess(pos) {
   var coordinates = pos.coords;
+  console.log("locationSuccess!");
   fetchWeather(coordinates.latitude, coordinates.longitude);
 }
 
@@ -84,13 +157,15 @@ var locationOptions = { "timeout": 15000, "maximumAge": 60000 };
 
 Pebble.addEventListener("ready", function(e) {
   console.log("connect!" + e.ready);
-  locationWatcher = window.navigator.geolocation.watchPosition(locationSuccess, locationError, locationOptions);
+  //locationWatcher = window.navigator.geolocation.watchPosition(locationSuccess, locationError, locationOptions);
   console.log(e.type);
 });
 
 Pebble.addEventListener("appmessage", function(e) {
+  fetchLFWeather();
+  //fetchWeather('38.94977778','-77.12763889');
   fetchWater('01646500');
-  window.navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
+  //window.navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
   console.log(e.type);
   console.log(e.payload.temperature);
   console.log("message!");
