@@ -54,9 +54,8 @@ function fetchWeather(latitude, longitude) {
           console.log(descr);
           console.log(city);
           Pebble.sendAppMessage({
-            "wCity":city, 
-            "descr":descr,
-            "temperature":temperature + "\u00B0C"
+            "0":descr,
+            "1":temperature + "\u00B0C"
           });
         }
 
@@ -75,30 +74,27 @@ function processUSGSdata(responseText){
   var gauges = new Object();
   console.log('Gauge count = ' + ts.length);
   for (var i = 0;i < ts.length; i++){
-    item = ts[i];
+      item = ts[i];
 
-    //Get some basic data about the gauge.
-    siteCode = item.sourceInfo.siteCode[0].value;
-//    if (!siteCode in gauges) {
-        site_name = item.sourceInfo.siteName;
+      //Get some basic data about the gauge.
+      siteCode = item.sourceInfo.siteCode[0].value;
+      site_name = item.sourceInfo.siteName;
 
-        console.log(site_name);
- 
-        type_num = item.variable.variableCode[0].value.toString();
-        desc     = item.variable.variableDescription;
-        name     = item.variable.unit.unitAbbreviation;
-        valList  = item.values[0].value;
-        value    = valList[valList.length -1].value;
-        time     = valList[valList.length -1].dateTime;
-        prevVal  = valList[valList.length -2].value;
+      console.log(site_name);
 
-        gauges.siteCode = {'name':name, 'reading':type_num = {'description':desc, 'time':time, 'value':value, 'prevVal':prevVal}};
-        console.log(gauges.siteCode.name);
-        console.log(gauges.siteCode.name.reading.type_num.description);
-//      }
-//      else {
-//        console.log("skipped " + siteCode);
-//      }
+      type_num = item.variable.variableCode[0].value.toString();
+      desc     = item.variable.variableDescription;
+      name     = item.variable.unit.unitAbbreviation;
+      valList  = item.values[0].value;
+      value    = valList[valList.length -1].value;
+      time     = valList[valList.length -1].dateTime;
+      prevVal  = valList[valList.length -2].value;
+
+      gauges.siteCode = {'name':name, 'reading':type_num = {'description':desc, 'time':time, 'value':value, 'prevVal':prevVal}};
+      console.log(gauges.siteCode.name);
+      console.log(time);
+      console.log(gauges.siteCode.name.reading.type_num.description);
+
     }
     return gauges;
 }
@@ -114,21 +110,23 @@ function fetchWater(gauge) {
   req.onload = function(e) {
     console.log("fetchWater req.onload CALLED");
     if (req.readyState == 4 && req.status == 200) {
-        // console.log('Got response ' + req.responseText);
-        //processUSGSdata(req.responseText);
         response = JSON.parse(req.responseText);
         site_name = response.value.timeSeries[0].sourceInfo.siteName;
-        console.log(site_name)
+        //var tList  = 
+        console.log(site_name);
         var hList = response.value.timeSeries[1].values[0].value;
-        var height = hList[hList.length -1].value;
+        var height = hList[hList.length -1].value + 'ft';
 
         var tList = response.value.timeSeries[0].values[0].value;
-        var h2temp = tList[tList.length -1].value;
+        var h2temp = tList[tList.length -1].value + '\u00B0C';
+        var gDate = new Date(tList[tList.length -1].dateTime);
+        //var sDate = gDate.toLocaleString();
+        var sDate = (gDate.getMonth() + 1) + "/" + gDate.getDate() + " " + gDate.getHours() + ":" + gDate.getMinutes();
+
         console.log(height);
         console.log(h2temp);
-        var combo = height + 'ft ' + h2temp + '\u00B0C';
-        console.log(combo);
-        Pebble.sendAppMessage({"flow":combo});
+        console.log("Last upadted at " + sDate)
+        Pebble.sendAppMessage({"2":height , "3":h2temp, "4":sDate});
     } else {
       console.log("Error");
     }
@@ -160,13 +158,14 @@ Pebble.addEventListener("ready", function(e) {
 });
 
 Pebble.addEventListener("appmessage", function(e) {
+  console.log("appmessage - START!");
   fetchLFWeather();
   //fetchWeather('38.94977778','-77.12763889');
   fetchWater('01646500');
   //window.navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
   console.log(e.type);
   console.log(e.payload.temperature);
-  console.log("message!");
+  console.log("appmessage - DONE!");
 });
 
 Pebble.addEventListener("webviewclosed", function(e) {

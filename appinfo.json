@@ -4,13 +4,14 @@
   "longName": "Riverwatch",
   "companyName": "paddlebike",
   "versionCode": 1,
-  "versionLabel": "1.0.0",
+  "versionLabel": "1.0.1",
   "watchapp": {
     "watchface": true
   },
 "appKeys": {
-    "rTemp": 3,
-    "flow": 2,
+    "gaugeTime":4,
+    "r_temp": 3,
+    "r_height": 2,
     "temperature": 1,
     "descr": 0
   },

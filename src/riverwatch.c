@@ -4,7 +4,7 @@ static Window *window;
 
 static TextLayer *date_layer;
 static TextLayer *time_layer;
-static TextLayer *city_layer;
+static TextLayer *gauge_time_layer;
 static TextLayer *descr_layer;
 static TextLayer *temperature_layer;
 static TextLayer *river_height_layer;
@@ -14,6 +14,7 @@ static AppSync sync;
 static uint8_t sync_buffer[256];
 
 enum WeatherKey {
+  GAUGE_TIME_KEY          = 4,
   RIVER_TEMP_KEY          = 3,
   RIVER_HEIGHT_KEY        = 2,
   WEATHER_TEMPERATURE_KEY = 1,  // TUPLE_CSTRING
@@ -22,12 +23,60 @@ enum WeatherKey {
 
 /*
 "appKeys": {
-    "rTemp":       3,
-    "flow":        2,
+    "gaugeTime":   4,
+    "r_temp":      3,
+    "r_height":    2,
     "temperature": 1,
     "descr":       0
   },
   */
+
+
+static void sync_error_callback(DictionaryResult dict_error, AppMessageResult app_message_error, void *context) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Sync Error: %d", app_message_error);
+}
+
+static void sync_tuple_changed_callback(const uint32_t key, const Tuple* new_tuple, const Tuple* old_tuple, void* context) {
+  //APP_LOG(APP_LOG_LEVEL_DEBUG, "sync_tuple_changed_callback: key: %d val: %s", (int)key, new_tuple->value->cstring);
+  switch (key) {
+
+    case WEATHER_DESCR_KEY:
+      text_layer_set_text(descr_layer, new_tuple->value->cstring);
+      break;
+
+    case WEATHER_TEMPERATURE_KEY:
+      text_layer_set_text(temperature_layer, new_tuple->value->cstring);
+      break;
+
+    case RIVER_HEIGHT_KEY:
+      text_layer_set_text(river_height_layer, new_tuple->value->cstring);
+      break;
+
+    case RIVER_TEMP_KEY:
+      text_layer_set_text(river_temp_layer, new_tuple->value->cstring);
+      break;
+
+    case GAUGE_TIME_KEY:
+      text_layer_set_text(gauge_time_layer, new_tuple->value->cstring);
+      break;
+  }
+}
+
+static void send_cmd(void) {
+  Tuplet value = TupletInteger(1, 1);
+
+  DictionaryIterator *iter;
+  app_message_outbox_begin(&iter);
+
+  if (iter == NULL) {
+    return;
+  }
+
+  dict_write_tuplet(iter, &value);
+  dict_write_end(iter);
+
+  app_message_outbox_send();
+}
 
 void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
   // Need to be static because they're used by the system later.
@@ -57,48 +106,11 @@ void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
   }
 
   text_layer_set_text(time_layer, time_text);
-}
 
-static void sync_error_callback(DictionaryResult dict_error, AppMessageResult app_message_error, void *context) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Sync Error: %d", app_message_error);
-}
-
-static void sync_tuple_changed_callback(const uint32_t key, const Tuple* new_tuple, const Tuple* old_tuple, void* context) {
-  //APP_LOG(APP_LOG_LEVEL_INFO, "sync_tuple_changed_callback: key: %d val: %s", (int)key, new_tuple->value->cstring);
-  switch (key) {
-
-    case WEATHER_DESCR_KEY:
-      text_layer_set_text(descr_layer, new_tuple->value->cstring);
-      break;
-
-    case WEATHER_TEMPERATURE_KEY:
-      text_layer_set_text(temperature_layer, new_tuple->value->cstring);
-      break;
-
-    case RIVER_HEIGHT_KEY:
-      text_layer_set_text(river_height_layer, new_tuple->value->cstring);
-      break;
-
-    case RIVER_TEMP_KEY:
-      text_layer_set_text(river_temp_layer, new_tuple->value->cstring);
-      break;
+  if (tick_time->tm_min == 50){
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Refreshing gauges:");
+    send_cmd();
   }
-}
-
-static void send_cmd(void) {
-  Tuplet value = TupletInteger(1, 1);
-
-  DictionaryIterator *iter;
-  app_message_outbox_begin(&iter);
-
-  if (iter == NULL) {
-    return;
-  }
-
-  dict_write_tuplet(iter, &value);
-  dict_write_end(iter);
-
-  app_message_outbox_send();
 }
 
 static void window_load(Window *window) {
@@ -112,54 +124,54 @@ static void window_load(Window *window) {
   //text_layer_set_text(date_layer, "February 28");
   layer_add_child(window_layer, text_layer_get_layer(date_layer));
 
-  time_layer = text_layer_create(GRect(10, 44, 134, 56));
+  time_layer = text_layer_create(GRect(10, 34, 134, 56));
   text_layer_set_text_color(time_layer, GColorWhite);
   text_layer_set_background_color(time_layer, GColorClear);
   text_layer_set_font(time_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_BOLD_SUBSET_49)));
   text_layer_set_text_alignment(time_layer, GTextAlignmentLeft);
   layer_add_child(window_layer, text_layer_get_layer(time_layer));
 
-  city_layer = text_layer_create(GRect(5, 105, 134, 17));
-  text_layer_set_text_color(city_layer, GColorWhite);
-  text_layer_set_background_color(city_layer, GColorClear);
-  text_layer_set_font(city_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
-  text_layer_set_text_alignment(city_layer, GTextAlignmentLeft);
-  text_layer_set_text(city_layer, "Little Falls");
-  layer_add_child(window_layer, text_layer_get_layer(city_layer));
+  gauge_time_layer = text_layer_create(GRect(5, 95, 134, 23));
+  text_layer_set_text_color(gauge_time_layer, GColorWhite);
+  text_layer_set_background_color(gauge_time_layer, GColorClear);
+  text_layer_set_font(gauge_time_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_21)));
+  text_layer_set_text_alignment(gauge_time_layer, GTextAlignmentLeft);
+  layer_add_child(window_layer, text_layer_get_layer(gauge_time_layer));
 
-  descr_layer = text_layer_create(GRect(10, 115, 94, 28));
+  descr_layer = text_layer_create(GRect(10, 115, 70, 28));
   text_layer_set_text_color(descr_layer, GColorWhite);
   text_layer_set_background_color(descr_layer, GColorClear);
   text_layer_set_font(descr_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(descr_layer, GTextAlignmentLeft);
   layer_add_child(window_layer, text_layer_get_layer(descr_layer));
 
-  temperature_layer = text_layer_create(GRect(90, 115, 94, 28));
+  temperature_layer = text_layer_create(GRect(70, 115, 74, 28));
   text_layer_set_text_color(temperature_layer, GColorWhite);
   text_layer_set_background_color(temperature_layer, GColorClear);
   text_layer_set_font(temperature_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
-  text_layer_set_text_alignment(temperature_layer, GTextAlignmentLeft);
+  text_layer_set_text_alignment(temperature_layer, GTextAlignmentRight);
   layer_add_child(window_layer, text_layer_get_layer(temperature_layer));
 
-  river_height_layer = text_layer_create(GRect(10, 140, 134, 28));
+  river_height_layer = text_layer_create(GRect(10, 140, 60, 28));
   text_layer_set_text_color(river_height_layer, GColorWhite);
   text_layer_set_background_color(river_height_layer, GColorClear);
   text_layer_set_font(river_height_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(river_height_layer, GTextAlignmentLeft);
   layer_add_child(window_layer, text_layer_get_layer(river_height_layer));
 
-  river_temp_layer = text_layer_create(GRect(90, 140, 134, 28));
+  river_temp_layer = text_layer_create(GRect(70, 140, 74, 28));
   text_layer_set_text_color(river_temp_layer, GColorWhite);
   text_layer_set_background_color(river_temp_layer, GColorClear);
   text_layer_set_font(river_temp_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
-  text_layer_set_text_alignment(river_temp_layer, GTextAlignmentLeft);
+  text_layer_set_text_alignment(river_temp_layer, GTextAlignmentRight);
   layer_add_child(window_layer, text_layer_get_layer(river_temp_layer));
 
   Tuplet initial_values[] = {
-    TupletCString(WEATHER_DESCR_KEY, "Look"),
-    TupletCString(WEATHER_TEMPERATURE_KEY, "1234\u00B0C"),
-    TupletCString(RIVER_HEIGHT_KEY, "0.0ft 0.0\u00B0C"),
-    TupletCString(RIVER_HEIGHT_KEY, "99\u00B0C"),
+    TupletCString(WEATHER_DESCR_KEY, "Surf"),
+    TupletCString(WEATHER_TEMPERATURE_KEY, "99\u00B0C"),
+    TupletCString(RIVER_HEIGHT_KEY, "0.0ft"),
+    TupletCString(RIVER_TEMP_KEY, "00.0\u00B0C"),
+    TupletCString(GAUGE_TIME_KEY, "00:00:00 PM EDT"),
   };
 
   app_sync_init(&sync, sync_buffer, sizeof(sync_buffer), initial_values, ARRAY_LENGTH(initial_values),
@@ -173,9 +185,10 @@ static void window_unload(Window *window) {
   text_layer_destroy(date_layer);
   text_layer_destroy(time_layer);
   text_layer_destroy(descr_layer);
-  text_layer_destroy(city_layer);
+  text_layer_destroy(gauge_time_layer);
   text_layer_destroy(temperature_layer);
   text_layer_destroy(river_height_layer);
+  text_layer_destroy(river_temp_layer);
 }
 
 static void init(void) {
@@ -187,9 +200,7 @@ static void init(void) {
     .unload = window_unload
   });
 
-  const int inbound_size = sizeof(sync_buffer);
-  const int outbound_size = sizeof(sync_buffer);
-  app_message_open(inbound_size, outbound_size);
+  app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
 
   const bool animated = true;
   window_stack_push(window, animated);
