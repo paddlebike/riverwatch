@@ -1,34 +1,45 @@
 {
-  "uuid": "c92db639-a931-40c3-8575-623fa9415f96",
-  "shortName": "Riverwatch",
-  "longName": "Riverwatch",
-  "companyName": "paddlebike",
-  "versionCode": 1,
-  "versionLabel": "1.0.1",
-  "watchapp": {
-    "watchface": true
-  },
-"appKeys": {
-    "gaugeTime":4,
-    "r_temp": 3,
-    "r_height": 2,
-    "temperature": 1,
-    "descr": 0
-  },
-
-  "resources": {
-    "media": [
-    {
-        "type": "font",
-        "name": "FONT_ROBOTO_CONDENSED_21",
-        "file": "fonts/Roboto-Condensed.ttf"
-      },
-      {
-        "characterRegex": "[:0-9]",
-        "type": "font",
-        "name": "FONT_ROBOTO_BOLD_SUBSET_49",
-        "file": "fonts/Roboto-Bold.ttf"
-      }
-      ]
-  }
+    "appKeys": {
+        "descr": 0,
+        "gaugeTime": 4,
+        "r_height": 2,
+        "r_temp": 3,
+        "temperature": 1
+    },
+    "capabilities": [
+        "location"
+    ],
+    "companyName": "paddlebike",
+    "longName": "Riverwatch",
+    "projectType": "native",
+    "resources": {
+        "media": [
+            {
+                "file": "images/riverwatch.png",
+                "menuIcon": true,
+                "name": "IMAGE_SCREENSHOT",
+                "type": "png"
+            },
+            {
+                "characterRegex": "[:0-9]",
+                "compatibility": "2.7",
+                "file": "fonts/Roboto-Bold.ttf",
+                "name": "FONT_ROBOTO_BOLD_SUBSET_49",
+                "type": "font"
+            },
+            {
+                "compatibility": "2.7",
+                "file": "fonts/Roboto-Condensed.ttf",
+                "name": "FONT_ROBOTO_CONDENSED_21",
+                "type": "font"
+            }
+        ]
+    },
+    "shortName": "Riverwatch",
+    "uuid": "c92db639-a931-40c3-8575-623fa9415f96",
+    "versionCode": 1,
+    "versionLabel": "1.2",
+    "watchapp": {
+        "watchface": true
+    }
 }

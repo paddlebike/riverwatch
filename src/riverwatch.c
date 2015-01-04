@@ -21,17 +21,6 @@ enum WeatherKey {
   WEATHER_DESCR_KEY       = 0,  // TUPLE_CSTRING
 };
 
-/*
-"appKeys": {
-    "gaugeTime":   4,
-    "r_temp":      3,
-    "r_height":    2,
-    "temperature": 1,
-    "descr":       0
-  },
-  */
-
-
 static void sync_error_callback(DictionaryResult dict_error, AppMessageResult app_message_error, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Sync Error: %d", app_message_error);
 }
@@ -141,7 +130,7 @@ static void window_load(Window *window) {
   descr_layer = text_layer_create(GRect(10, 115, 70, 28));
   text_layer_set_text_color(descr_layer, GColorWhite);
   text_layer_set_background_color(descr_layer, GColorClear);
-  text_layer_set_font(descr_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+  text_layer_set_font(descr_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
   text_layer_set_text_alignment(descr_layer, GTextAlignmentLeft);
   layer_add_child(window_layer, text_layer_get_layer(descr_layer));
 
@@ -171,7 +160,7 @@ static void window_load(Window *window) {
     TupletCString(WEATHER_TEMPERATURE_KEY, "99\u00B0C"),
     TupletCString(RIVER_HEIGHT_KEY, "0.0ft"),
     TupletCString(RIVER_TEMP_KEY, "00.0\u00B0C"),
-    TupletCString(GAUGE_TIME_KEY, "00:00:00 PM EDT"),
+    TupletCString(GAUGE_TIME_KEY, "00:00"),
   };
 
   app_sync_init(&sync, sync_buffer, sizeof(sync_buffer), initial_values, ARRAY_LENGTH(initial_values),
