@@ -1,6 +1,20 @@
 var weatherRequested = false;
 var riverRequested = false;
 var locationOptions = { "timeout": 15000, "maximumAge": 60000 }; 
+var CONFIGURATION_URL  = 'http://paddlebike.github.io/riverwatch/config/';
+
+var Global = {
+
+  maxRetry:          3,
+  retryWait:         500, // ms
+  config: {
+    debugEnabled:   false,
+    batteryEnabled: true,
+    riverTemp:      true,
+    riverGauge:     '01646500',
+    weatherScale:   'C'
+  },
+};
 
 function getJson(url, callback) {
   try {
@@ -141,7 +155,7 @@ Pebble.addEventListener("ready", function(e) {
   console.log("Event ready - START!");
   console.log(e.type);
   if (riverRequested !== true){
-    fetchWater('01646500');
+    fetchWater(Global.config.riverGauge);
   }
   
   if (weatherRequested !== true){
@@ -156,10 +170,40 @@ Pebble.addEventListener("appmessage", function(e) {
   console.log("EVent appmessage - DONE!");
 });
 
-Pebble.addEventListener("webviewclosed", function(e) {
-  console.log("EVent webview closed- START");
-  console.log(e.type);
-  console.log(e.response);
+
+/**
+ * This is the reason for the Global.config variable - I couldn't think of a way (short of asking Pebble)
+ * for the latest config settings. So I persist them in a rather ugly Global variable. 
+ */
+Pebble.addEventListener("showConfiguration", function (e) {
+    var options = {
+      'd': Global.config.debugEnabled,
+      'u': Global.config.weatherScale,
+      'b': Global.config.batteryEnabled ? 'on' : 'off',
+      't': Global.config.riverTemp ? 'on' : 'off',
+      'g': Global.config.riverGauge
+    };
+    var url = CONFIGURATION_URL+'?'+encodeURIComponent(JSON.stringify(options));
+    console.log('Configuration requested using url: '+url);
+    Pebble.openURL(url);
 });
 
 
+Pebble.addEventListener("webviewclosed", function(e) {
+  console.log("Eent webview closed- START");
+  console.log(e.type);
+  console.log(e.response);
+  // webview closed
+  //Using primitive JSON validity and non-empty check
+  if (e.response.charAt(0) == "{" && e.response.slice(-1) == "}" && e.response.length > 5) {
+    var options = JSON.parse(decodeURIComponent(e.response));
+    console.log("Options = " + JSON.stringify(options));
+    Global.config.riverGauge     = options.gauge;
+    Global.config.riverTemp      = options.temp    === 'true';
+    Global.config.weatherScale   = options.scale   === 'C' ? 'C' : 'F';
+    Global.config.debugEnabled   = options.debug   === 'true';
+    Global.config.batteryEnabled = options.battery === 'on';
+  } else {
+    console.log("Cancelled");
+  }
+});
