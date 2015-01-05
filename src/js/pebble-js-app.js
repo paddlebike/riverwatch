@@ -192,7 +192,7 @@ Pebble.addEventListener("showConfiguration", function (e) {
 
 
 Pebble.addEventListener("webviewclosed", function(e) {
-  console.log("Eent webview closed- START");
+  console.log("Event webview closed- START");
   console.log(e.type);
   console.log(e.response);
   // webview closed
