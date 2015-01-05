@@ -17,35 +17,11 @@
 
     <div data-role="content" class="ui-body ui-body-a">
 
-        <div data-role="fieldcontain">
-            <fieldset data-role="controlgroup" data-mini="true">
-                <legend>Weather Provider:</legend>
-                <input type="radio" name="weather-service" id="radioyahoo" value="yahoo" class="custom" />
-                <label for="radioyahoo">YAHOO! Weather</label>
-
-                <input type="radio" name="weather-service" id="radioopen" value="open" class="custom" />
-                <label for="radioopen">Open Weather Map</label>
-
-            </fieldset>
-        </div>
-
-        <div data-role="fieldcontain">
-            <label for="fliphourly">Hourly Weather (requires key):</label>
-            <select name="fliphourly" id="fliphourly" data-role="slider" data-mini="true">
-                <option value="off">Off</option>
-                <option value="on">On</option>
-            </select>
-        </div>
-        <div data-role="popup" id="popupCloseRight" class="ui-content">
-            <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
-            <p>Hourly weather requires a Weather Underground API key.</p>
-            <p>Weather Underground provides a free Developer API key, but you must first sign up.
-                You can <a href="http://www.wunderground.com/weather/api/">sign up here.</a></p>
-        </div>
-        <div data-role="fieldcontain" id="apikey" data-mini="true">
+ 
+        <div data-role="fieldcontain" id="gaugeID" data-mini="true">
             <div class="ui-field-contain" >
-                <label for="text-apikey">Weather Underground API Key:</label>
-                <input type="text" name="text-apikey"  id="text-apikey" autocapitalize="off" autocorrect="off" autocomplete="off" value="">
+                <label for="text-gaugeID">USGS Gauge ID:</label>
+                <input type="text" name="text-gaugeid"  id="text-gaugeID" autocapitalize="off" autocorrect="off" autocomplete="off" value="">
             </div>
         </div>
 
@@ -57,6 +33,18 @@
 
                 <input type="radio" name="weather-scale" id="radioC" value="C" class="custom" />
                 <label for="radioC">°Celsius</label>
+
+            </fieldset>
+        </div>
+
+        <div data-role="fieldcontain">
+            <fieldset data-role="controlgroup" data-type="horizontal" data-mini="true">
+                <legend>River Scale:</legend>
+                <input type="radio" name="river-scale" id="radioFT" value="FT" class="custom" />
+                <label for="radioFT">Guage Height</label>
+
+                <input type="radio" name="river-scale" id="radioCFS" value="CFS" class="custom" />
+                <label for="radioCFS">Gauge Cubit Feet per Second</label>
 
             </fieldset>
         </div>

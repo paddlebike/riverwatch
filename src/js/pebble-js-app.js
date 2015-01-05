@@ -12,7 +12,8 @@ var Global = {
     batteryEnabled: true,
     riverTemp:      true,
     riverGauge:     '01646500',
-    weatherScale:   'C'
+    weatherScale:   'C',
+    riverScale:     'FT'
   },
 };
 
@@ -179,6 +180,7 @@ Pebble.addEventListener("showConfiguration", function (e) {
     var options = {
       'd': Global.config.debugEnabled,
       'u': Global.config.weatherScale,
+      'r': Global.config.riverScale,
       'b': Global.config.batteryEnabled ? 'on' : 'off',
       't': Global.config.riverTemp ? 'on' : 'off',
       'g': Global.config.riverGauge
@@ -199,8 +201,8 @@ Pebble.addEventListener("webviewclosed", function(e) {
     var options = JSON.parse(decodeURIComponent(e.response));
     console.log("Options = " + JSON.stringify(options));
     Global.config.riverGauge     = options.gauge;
-    Global.config.riverTemp      = options.temp    === 'true';
-    Global.config.weatherScale   = options.scale   === 'C' ? 'C' : 'F';
+    Global.config.riverScale     = options.rScale  === 'CFS' ? 'CFS' : 'FT';
+    Global.config.weatherScale   = options.wScale  === 'C' ? 'C' : 'F';
     Global.config.debugEnabled   = options.debug   === 'true';
     Global.config.batteryEnabled = options.battery === 'on';
   } else {
