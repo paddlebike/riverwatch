@@ -1,10 +1,9 @@
 var weatherRequested = false;
 var riverRequested = false;
 var locationOptions = { "timeout": 15000, "maximumAge": 60000 }; 
-var CONFIGURATION_URL  = 'http://paddlebike.github.io/riverwatch/config/';
+var CONFIGURATION_URL  = 'http://paddlebike.github.io/riverwatch-config.html';
 
 var Global = {
-
   maxRetry:          3,
   retryWait:         500, // ms
   config: {
@@ -12,7 +11,8 @@ var Global = {
     batteryEnabled: true,
     riverTemp:      true,
     riverGauge:     '01646500',
-    weatherScale:   'C'
+    weatherScale:   'C',
+    riverScale:     'CFS'
   },
 };
 
@@ -179,8 +179,9 @@ Pebble.addEventListener("showConfiguration", function (e) {
     var options = {
       'd': Global.config.debugEnabled,
       'u': Global.config.weatherScale,
+      'r': Global.config.riverScale,
       'b': Global.config.batteryEnabled ? 'on' : 'off',
-      't': Global.config.riverTemp ? 'on' : 'off',
+      'd': Global.config.debugEnabled  ?  'on' : 'off',
       'g': Global.config.riverGauge
     };
     var url = CONFIGURATION_URL+'?'+encodeURIComponent(JSON.stringify(options));
@@ -190,7 +191,7 @@ Pebble.addEventListener("showConfiguration", function (e) {
 
 
 Pebble.addEventListener("webviewclosed", function(e) {
-  console.log("Eent webview closed- START");
+  console.log("Event webview closed- START");
   console.log(e.type);
   console.log(e.response);
   // webview closed
@@ -203,6 +204,7 @@ Pebble.addEventListener("webviewclosed", function(e) {
     Global.config.weatherScale   = options.scale   === 'C' ? 'C' : 'F';
     Global.config.debugEnabled   = options.debug   === 'true';
     Global.config.batteryEnabled = options.battery === 'on';
+    console.log("Configuration complete for " + Global.connfig);
   } else {
     console.log("Cancelled");
   }
