@@ -7,18 +7,19 @@
         "temperature": 1
     },
     "capabilities": [
-        "location"
+        "location",
+        "configurable"
     ],
-    "companyName": "paddlebike",
+    "companyName": "Ken Andrews",
     "longName": "Riverwatch",
     "projectType": "native",
     "resources": {
         "media": [
             {
-                "file": "images/riverwatch.png",
-                "menuIcon": true,
-                "name": "IMAGE_SCREENSHOT",
-                "type": "png"
+                "compatibility": "2.7",
+                "file": "fonts/Roboto-Condensed.ttf",
+                "name": "FONT_ROBOTO_CONDENSED_21",
+                "type": "font"
             },
             {
                 "characterRegex": "[:0-9]",
@@ -28,17 +29,17 @@
                 "type": "font"
             },
             {
-                "compatibility": "2.7",
-                "file": "fonts/Roboto-Condensed.ttf",
-                "name": "FONT_ROBOTO_CONDENSED_21",
-                "type": "font"
+                "file": "images/riverwatch.png",
+                "menuIcon": true,
+                "name": "IMAGE_SCREENSHOT",
+                "type": "png"
             }
         ]
     },
     "shortName": "Riverwatch",
     "uuid": "c92db639-a931-40c3-8575-623fa9415f96",
     "versionCode": 1,
-    "versionLabel": "1.2",
+    "versionLabel": "0.2",
     "watchapp": {
         "watchface": true
     }
