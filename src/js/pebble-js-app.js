@@ -2,6 +2,8 @@ var weatherRequested = false;
 var riverRequested = false;
 var locationOptions = { "timeout": 15000, "maximumAge": 60000 }; 
 var CONFIGURATION_URL  = 'http://paddlebike.github.io/riverwatch-config.html';
+var heightParam = "00065";
+var tempParam   = "00010";
 
 var Global = {
   maxRetry:          3,
@@ -42,7 +44,46 @@ function getJson(url, callback) {
   }
 }
 
+function parseWaterData(waterdata){
+  var waterDB = {};
+  var ts = waterdata.value.timeSeries;
+  for(var i = 0; i < ts.length; i++){
+    var entry = ts[i];
+    var valList = entry.values[0].value;
+    var valEnd = valList.length - 1;
+    var parts = entry.name.split(":");
+    var gauge = parts[1];
+    var param = parts[2];
+    console.log('Gauge:' + gauge + ' Param:' + param);
+    
+    var gDate = new Date(valList[valEnd].dateTime);
+    var sDate = (gDate.getMonth() + 1) + "/" + gDate.getDate() + " " + gDate.getHours() + ":" + gDate.getMinutes();
 
+    var gaugeParam = {
+      'dateTime': sDate,
+      'value':valList[valEnd].value 
+    };
+    
+   if (waterDB[gauge] === undefined){
+     /* Gauge does not yet exist so add it and the param */
+     var siteName = entry.sourceInfo.siteName;
+     waterDB[gauge] = {name:siteName};
+     waterDB[gauge][param] = gaugeParam;
+     console.log("Added gauge to waterDB for " + waterDB[gauge].name);
+    } else {
+      /* Just add the Param */
+      console.log("Just adding param to waterDB");
+      waterDB[gauge][param] = gaugeParam;
+    }
+/*    
+    console.log("WaterDB:");
+    console.log(JSON.stringify(waterDB) + "\n\n");
+    console.log(' Value:' + waterDB[gauge][param].value);
+    console.log(' Date:'  + waterDB[gauge][param].dateTime); 
+*/
+  }
+  return(waterDB);
+}
 
 
 function fetchYahooWeather(latitude, longitude){
@@ -83,36 +124,51 @@ function fetchYahooWeather(latitude, longitude){
 
 function fetchWater(gauge) {
   console.log("fetchWater called with gauge " + gauge);
-  var nwis_url = 'http://waterservices.usgs.gov/nwis/iv/?period=P1D&format=json&modifiedSince=PT30M&parameterCd=00065,00010&sites=' + gauge;
+  var nwis_url = 'http://waterservices.usgs.gov/nwis/iv/?period=P1D&format=json&parameterCd=00065,00010&sites=' + gauge;
   getJson(nwis_url, function(err, response){
-    console.log("Got condition: " + JSON.stringify(response.value.timeSeries));
+   /* console.log("Got condition: " + JSON.stringify(response.value.timeSeries)); */
+
     try 
     {
       if (err) {
         throw err;
       }
-      var site_name = response.value.timeSeries[0].sourceInfo.siteName;
+
+      var waterDB = parseWaterData(response);
+      var height = "UNK";
+      var h2temp = "UNK";
+      var sDate  = "UNK";
+      
+      var site_name = waterDB[gauge].name;
       console.log(site_name);
-      var hList = response.value.timeSeries[1].values[0].value;
-      var height = hList[hList.length -1].value + 'ft';
       
-      var tList = response.value.timeSeries[0].values[0].value;
-      var h2temp = tList[tList.length -1].value + '\u00B0C';
-      console.log('Raw Date: ' + tList[tList.length -1].dateTime);
-      var gDate = new Date(tList[tList.length -1].dateTime);
-      var sDate = (gDate.getMonth() + 1) + "/" + gDate.getDate() + " " + gDate.getHours() + ":" + gDate.getMinutes();
+      if (waterDB[gauge][heightParam] !== undefined){
+        height = waterDB[gauge][heightParam].value + 'ft';
+        sDate = waterDB[gauge][heightParam].dateTime;
+      }
       
-      console.log(height);
-      console.log(h2temp);
+      if (waterDB[gauge][tempParam] !== undefined){
+        h2temp = waterDB[gauge][tempParam].value + '\u00B0C';
+        if (sDate === "UNK"){
+          sDate = waterDB[gauge][tempParam].dateTime;
+        }
+      }
+ 
+      console.log("Last Height : " + height);
       console.log("Last upadted at " + sDate);
+      console.log("Last Temp : " + h2temp);
+
       Pebble.sendAppMessage({"r_height":height , "r_temp":h2temp, "4":sDate});
+
     }
     catch (ex) {
       console.warn("Could not find USGS data in response: " + ex.message);
     }
+
     riverRequested = false;
   });
   riverRequested = true;
+  console.log("River Request Completed\n\n");
 }
 
 function locationSuccess(pos) {
@@ -177,7 +233,6 @@ Pebble.addEventListener("appmessage", function(e) {
  */
 Pebble.addEventListener("showConfiguration", function (e) {
     var options = {
-      'd': Global.config.debugEnabled,
       'u': Global.config.weatherScale,
       'r': Global.config.riverScale,
       'b': Global.config.batteryEnabled ? 'on' : 'off',

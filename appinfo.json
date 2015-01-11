@@ -16,10 +16,10 @@
     "resources": {
         "media": [
             {
-                "compatibility": "2.7",
-                "file": "fonts/Roboto-Condensed.ttf",
-                "name": "FONT_ROBOTO_CONDENSED_21",
-                "type": "font"
+                "file": "images/riverwatch.png",
+                "menuIcon": true,
+                "name": "IMAGE_SCREENSHOT",
+                "type": "png"
             },
             {
                 "characterRegex": "[:0-9]",
@@ -29,10 +29,10 @@
                 "type": "font"
             },
             {
-                "file": "images/riverwatch.png",
-                "menuIcon": true,
-                "name": "IMAGE_SCREENSHOT",
-                "type": "png"
+                "compatibility": "2.7",
+                "file": "fonts/Roboto-Condensed.ttf",
+                "name": "FONT_ROBOTO_CONDENSED_21",
+                "type": "font"
             }
         ]
     },
