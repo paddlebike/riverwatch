@@ -6,17 +6,31 @@ var heightParam = "00065";
 var tempParam   = "00010";
 
 var Global = {
-  maxRetry:          3,
-  retryWait:         500, // ms
+  maxRetry:   3,
+  retryWait:  500, // ms
   config: {
     debugEnabled:   false,
     batteryEnabled: true,
-    riverTemp:      true,
-    riverGauge:     '01646500',
-    weatherScale:   'C',
-    riverScale:     'CFS'
+    gaugeID:       '01646500',
+    tempScale:     'C',
+    riverScale:    'CFS'
   },
 };
+
+function saveConfiguration(){
+  var configStr = JSON.stringify(Global.config);
+  console.log('saveConfiguration - configuration: ' + configStr);
+  localStorage.setItem('mainConfig', configStr);
+}
+
+function loadConfiguration(){
+  var configStr = localStorage.getItem('mainConfig');
+  console.log('loadConfiguration - configuration: ' + configStr);
+  if (configStr !== null) {
+    console.log('we have a config!');
+    Global.config = JSON.parse(configStr);
+  }
+}
 
 function getJson(url, callback) {
   try {
@@ -52,9 +66,9 @@ function parseWaterData(waterdata){
     var valList = entry.values[0].value;
     var valEnd = valList.length - 1;
     var parts = entry.name.split(":");
-    var gauge = parts[1];
+    var gaugeID = parts[1];
     var param = parts[2];
-    console.log('Gauge:' + gauge + ' Param:' + param);
+    console.log('Gauge:' + gaugeID + ' Param:' + param);
     
     var gDate = new Date(valList[valEnd].dateTime);
     var sDate = (gDate.getMonth() + 1) + "/" + gDate.getDate() + " " + gDate.getHours() + ":" + gDate.getMinutes();
@@ -64,16 +78,16 @@ function parseWaterData(waterdata){
       'value':valList[valEnd].value 
     };
     
-   if (waterDB[gauge] === undefined){
+   if (waterDB[gaugeID] === undefined){
      /* Gauge does not yet exist so add it and the param */
      var siteName = entry.sourceInfo.siteName;
-     waterDB[gauge] = {name:siteName};
-     waterDB[gauge][param] = gaugeParam;
-     console.log("Added gauge to waterDB for " + waterDB[gauge].name);
+     waterDB[gaugeID] = {name:siteName};
+     waterDB[gaugeID][param] = gaugeParam;
+     console.log("Added gauge to waterDB for " + waterDB[gaugeID].name);
     } else {
       /* Just add the Param */
       console.log("Just adding param to waterDB");
-      waterDB[gauge][param] = gaugeParam;
+      waterDB[gaugeID][param] = gaugeParam;
     }
 /*    
     console.log("WaterDB:");
@@ -122,9 +136,9 @@ function fetchYahooWeather(latitude, longitude){
   weatherRequested = true;
 }
 
-function fetchWater(gauge) {
-  console.log("fetchWater called with gauge " + gauge);
-  var nwis_url = 'http://waterservices.usgs.gov/nwis/iv/?period=P1D&format=json&parameterCd=00065,00010&sites=' + gauge;
+function fetchWater(gaugeID) {
+  console.log("fetchWater called with gaugeID " + gaugeID);
+  var nwis_url = 'http://waterservices.usgs.gov/nwis/iv/?period=P1D&format=json&parameterCd=00065,00010&sites=' + gaugeID;
   getJson(nwis_url, function(err, response){
    /* console.log("Got condition: " + JSON.stringify(response.value.timeSeries)); */
 
@@ -139,18 +153,18 @@ function fetchWater(gauge) {
       var h2temp = "UNK";
       var sDate  = "UNK";
       
-      var site_name = waterDB[gauge].name;
+      var site_name = waterDB[gaugeID].name;
       console.log(site_name);
       
-      if (waterDB[gauge][heightParam] !== undefined){
-        height = waterDB[gauge][heightParam].value + 'ft';
-        sDate = waterDB[gauge][heightParam].dateTime;
+      if (waterDB[gaugeID][heightParam] !== undefined){
+        height = waterDB[gaugeID][heightParam].value + 'ft';
+        sDate = waterDB[gaugeID][heightParam].dateTime;
       }
       
-      if (waterDB[gauge][tempParam] !== undefined){
-        h2temp = waterDB[gauge][tempParam].value + '\u00B0C';
+      if (waterDB[gaugeID][tempParam] !== undefined){
+        h2temp = waterDB[gaugeID][tempParam].value + '\u00B0C';
         if (sDate === "UNK"){
-          sDate = waterDB[gauge][tempParam].dateTime;
+          sDate = waterDB[gaugeID][tempParam].dateTime;
         }
       }
  
@@ -196,7 +210,7 @@ function do_update(){
           do_update();
       }, 5000);
   }
-  fetchWater('01646500');
+  fetchWater(Global.config.gaugeID);
   
   if (weatherRequested === true){
       setTimeout(function () {
@@ -209,6 +223,7 @@ function do_update(){
 
 Pebble.addEventListener("ready", function(e) {
   console.log("Event ready - START!");
+  loadConfiguration();
   console.log(e.type);
   if (riverRequested !== true){
     fetchWater(Global.config.riverGauge);
@@ -223,7 +238,7 @@ Pebble.addEventListener("appmessage", function(e) {
   console.log("Event appmessage - START!");
   console.log(e.type);
   do_update();
-  console.log("EVent appmessage - DONE!");
+  console.log("Event appmessage - DONE!");
 });
 
 
@@ -233,11 +248,11 @@ Pebble.addEventListener("appmessage", function(e) {
  */
 Pebble.addEventListener("showConfiguration", function (e) {
     var options = {
-      'u': Global.config.weatherScale,
-      'r': Global.config.riverScale,
-      'b': Global.config.batteryEnabled ? 'on' : 'off',
-      'd': Global.config.debugEnabled  ?  'on' : 'off',
-      'g': Global.config.riverGauge
+      'tempScale'     : Global.config.tempScale,
+      'riverScale'    : Global.config.riverScale,
+      'batteryEnabled': Global.config.batteryEnabled ? 'on' : 'off',
+      'debugEnabled'  : Global.config.debugEnabled  ?  'on' : 'off',
+      'gaugeID'       : Global.config.gaugeID
     };
     var url = CONFIGURATION_URL+'?'+encodeURIComponent(JSON.stringify(options));
     console.log('Configuration requested using url: '+url);
@@ -251,15 +266,18 @@ Pebble.addEventListener("webviewclosed", function(e) {
   console.log(e.response);
   // webview closed
   //Using primitive JSON validity and non-empty check
+  // {"text-gaugeID":"016567400","batteryEnabled":"on","debugEnabled":"on","radioF":true,"radioC":false,"radioFT":true,"radioCFS":false}
   if (e.response.charAt(0) == "{" && e.response.slice(-1) == "}" && e.response.length > 5) {
     var options = JSON.parse(decodeURIComponent(e.response));
     console.log("Options = " + JSON.stringify(options));
-    Global.config.riverGauge     = options.gauge;
-    Global.config.riverTemp      = options.temp    === 'true';
-    Global.config.weatherScale   = options.scale   === 'C' ? 'C' : 'F';
-    Global.config.debugEnabled   = options.debug   === 'true';
-    Global.config.batteryEnabled = options.battery === 'on';
-    console.log("Configuration complete for " + Global.connfig);
+    Global.config.gaugeID        = options.gaugeID;
+    Global.config.riverScale     = options.radioCFS       === 'CFS' ? 'CFS' : 'FT';
+    Global.config.tempScale      = options.radioC         === 'C' ? 'C' : 'F';
+    Global.config.debugEnabled   = options.debugEnabled   === 'true';
+    Global.config.batteryEnabled = options.batteryEnabled === 'on';
+    console.log("Configuration complete for " + Global.config);
+    saveConfiguration();
+    do_update();
   } else {
     console.log("Cancelled");
   }
