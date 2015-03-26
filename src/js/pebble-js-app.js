@@ -15,6 +15,11 @@ var Global = {
     tempScale:     'C',
     riverScale:    'CFS'
   },
+  cache: {
+    height:        'UNK',
+    h2temp:        'UNK',
+    sDate:         'UNK'
+  }
 };
 
 function saveConfiguration(){
@@ -30,6 +35,31 @@ function loadConfiguration(){
     console.log('we have a config!');
     Global.config = JSON.parse(configStr);
   }
+}
+
+function loadWaterData(){
+  var cacheStr = localStorage.getItem('waterCache');
+  console.log('loadWaterData - waterData: ' + cacheStr);
+  if (cacheStr !== null) {
+    console.log('we have a cache!');
+    Global.cache = JSON.parse(cacheStr);
+    sendWaterData();
+  }
+}
+
+function saveWaterData(){
+  var cacheStr = JSON.stringify(Global.cache);
+  console.log('saveWaterData - cache: ' + cacheStr);
+  localStorage.setItem('waterCache', cacheStr);
+}
+
+
+function sendWaterData(){
+  console.log("Last Height : "    + Global.cache.height);
+  console.log("Last upadted at :" + Global.cache.sDate);
+  console.log("Last Temp : "      + Global.cache.h2temp);
+
+  Pebble.sendAppMessage({"r_height":Global.cache.height , "r_temp":Global.cache.h2temp, "4":Global.cache.sDate});
 }
 
 function getJson(url, callback) {
@@ -145,35 +175,28 @@ function fetchWater(gaugeID) {
     try 
     {
       if (err) {
+        console.warn("Error in response: " + err);
         throw err;
       }
 
       var waterDB = parseWaterData(response);
-      var height = "UNK";
-      var h2temp = "UNK";
-      var sDate  = "UNK";
-      
+
       var site_name = waterDB[gaugeID].name;
       console.log(site_name);
       
       if (waterDB[gaugeID][heightParam] !== undefined){
-        height = waterDB[gaugeID][heightParam].value + 'ft';
-        sDate = waterDB[gaugeID][heightParam].dateTime;
+        Global.cache.height = waterDB[gaugeID][heightParam].value + 'ft';
+        Global.cache.sDate = waterDB[gaugeID][heightParam].dateTime;
       }
       
       if (waterDB[gaugeID][tempParam] !== undefined){
-        h2temp = waterDB[gaugeID][tempParam].value + '\u00B0C';
-        if (sDate === "UNK"){
-          sDate = waterDB[gaugeID][tempParam].dateTime;
+        Global.cache.h2temp = waterDB[gaugeID][tempParam].value + '\u00B0C';
+        if (Global.cache.sDate === "UNK"){
+          Global.cache.sDate = waterDB[gaugeID][tempParam].dateTime;
         }
       }
- 
-      console.log("Last Height : " + height);
-      console.log("Last upadted at " + sDate);
-      console.log("Last Temp : " + h2temp);
-
-      Pebble.sendAppMessage({"r_height":height , "r_temp":h2temp, "4":sDate});
-
+      sendWaterData();
+      saveWaterData();
     }
     catch (ex) {
       console.warn("Could not find USGS data in response: " + ex.message);
@@ -182,7 +205,7 @@ function fetchWater(gaugeID) {
     riverRequested = false;
   });
   riverRequested = true;
-  console.log("River Request Completed\n\n");
+  console.log("River Request Completed");
 }
 
 function locationSuccess(pos) {
@@ -221,10 +244,11 @@ function do_update(){
   fetchWeather();
 }
 
-Pebble.addEventListener("ready", function(e) {
-  console.log("Event ready - START!");
+function startup(){
+  console.log("startup - START!");
   loadConfiguration();
-  console.log(e.type);
+  loadWaterData();
+  
   if (riverRequested !== true){
     fetchWater(Global.config.riverGauge);
   }
@@ -232,6 +256,12 @@ Pebble.addEventListener("ready", function(e) {
   if (weatherRequested !== true){
     fetchWeather();
   }
+}
+
+Pebble.addEventListener("ready", function(e) {
+  console.log("Event ready - START!");
+  console.log(e.type);
+  startup();
 });
 
 Pebble.addEventListener("appmessage", function(e) {

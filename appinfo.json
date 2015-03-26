@@ -36,6 +36,7 @@
             }
         ]
     },
+    "sdkVersion": "2",
     "shortName": "Riverwatch",
     "uuid": "c92db639-a931-40c3-8575-623fa9415f96",
     "versionCode": 1,
