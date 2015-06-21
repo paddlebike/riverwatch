@@ -21,6 +21,7 @@ enum WeatherKey {
   WEATHER_DESCR_KEY       = 0,  // TUPLE_CSTRING
 };
 
+  
 static void sync_error_callback(DictionaryResult dict_error, AppMessageResult app_message_error, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Sync Error: %d", app_message_error);
 }
@@ -104,52 +105,59 @@ void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
 
 static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
-
+#ifdef PBL_COLOR
+  GColor8  TIME_COLOR     = GColorWhite ;
+  GColor8  WEATHER_COLOR  = GColorOrange;
+  GColor8 RIVER_COLOR     = GColorCeleste ;
+#else
+  int  TIME_COLOR    = GColorWhite;
+  int WEATHER_COLOR  = GColorWhite; 
+  int RIVER_COLOR    = GColorWhite; 
+#endif
   date_layer = text_layer_create(GRect(10, 10, 150, 32));
-  text_layer_set_text_color(date_layer, GColorWhite);
+  text_layer_set_text_color(date_layer, TIME_COLOR);
   text_layer_set_background_color(date_layer, GColorClear);
   text_layer_set_font(date_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_21)));
   text_layer_set_text_alignment(date_layer, GTextAlignmentLeft);
-  //text_layer_set_text(date_layer, "February 28");
   layer_add_child(window_layer, text_layer_get_layer(date_layer));
 
   time_layer = text_layer_create(GRect(10, 34, 134, 56));
-  text_layer_set_text_color(time_layer, GColorWhite);
+  text_layer_set_text_color(time_layer, TIME_COLOR);
   text_layer_set_background_color(time_layer, GColorClear);
   text_layer_set_font(time_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_BOLD_SUBSET_49)));
   text_layer_set_text_alignment(time_layer, GTextAlignmentLeft);
   layer_add_child(window_layer, text_layer_get_layer(time_layer));
 
   gauge_time_layer = text_layer_create(GRect(5, 95, 134, 23));
-  text_layer_set_text_color(gauge_time_layer, GColorWhite);
+  text_layer_set_text_color(gauge_time_layer, RIVER_COLOR);
   text_layer_set_background_color(gauge_time_layer, GColorClear);
   text_layer_set_font(gauge_time_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_21)));
   text_layer_set_text_alignment(gauge_time_layer, GTextAlignmentLeft);
   layer_add_child(window_layer, text_layer_get_layer(gauge_time_layer));
 
   descr_layer = text_layer_create(GRect(10, 115, 70, 28));
-  text_layer_set_text_color(descr_layer, GColorWhite);
+  text_layer_set_text_color(descr_layer, WEATHER_COLOR);
   text_layer_set_background_color(descr_layer, GColorClear);
   text_layer_set_font(descr_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
   text_layer_set_text_alignment(descr_layer, GTextAlignmentLeft);
   layer_add_child(window_layer, text_layer_get_layer(descr_layer));
 
   temperature_layer = text_layer_create(GRect(70, 115, 74, 28));
-  text_layer_set_text_color(temperature_layer, GColorWhite);
+  text_layer_set_text_color(temperature_layer, WEATHER_COLOR);
   text_layer_set_background_color(temperature_layer, GColorClear);
   text_layer_set_font(temperature_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(temperature_layer, GTextAlignmentRight);
   layer_add_child(window_layer, text_layer_get_layer(temperature_layer));
 
   river_height_layer = text_layer_create(GRect(10, 140, 60, 28));
-  text_layer_set_text_color(river_height_layer, GColorWhite);
+  text_layer_set_text_color(river_height_layer, RIVER_COLOR);
   text_layer_set_background_color(river_height_layer, GColorClear);
   text_layer_set_font(river_height_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(river_height_layer, GTextAlignmentLeft);
   layer_add_child(window_layer, text_layer_get_layer(river_height_layer));
 
   river_temp_layer = text_layer_create(GRect(70, 140, 74, 28));
-  text_layer_set_text_color(river_temp_layer, GColorWhite);
+  text_layer_set_text_color(river_temp_layer, RIVER_COLOR);
   text_layer_set_background_color(river_temp_layer, GColorClear);
   text_layer_set_font(river_temp_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(river_temp_layer, GTextAlignmentRight);
@@ -182,8 +190,12 @@ static void window_unload(Window *window) {
 
 static void init(void) {
   window = window_create();
+#ifdef PBL_COLOR
+  window_set_background_color(window, GColorBlack );
+#else
   window_set_background_color(window, GColorBlack);
-  window_set_fullscreen(window, true);
+#endif
+  //window_set_fullscreen(window, true);
   window_set_window_handlers(window, (WindowHandlers) {
     .load = window_load,
     .unload = window_unload

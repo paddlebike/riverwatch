@@ -166,7 +166,8 @@ function fetchYahooWeather(latitude, longitude){
   weatherRequested = true;
 }
 
-function fetchWater(gaugeID) {
+function fetchWater() {
+  var gaugeID = Global.config.gaugeID; //'01646500';
   console.log("fetchWater called with gaugeID " + gaugeID);
   var nwis_url = 'http://waterservices.usgs.gov/nwis/iv/?period=P1D&format=json&parameterCd=00065,00010&sites=' + gaugeID;
   getJson(nwis_url, function(err, response){
@@ -233,7 +234,7 @@ function do_update(){
           do_update();
       }, 5000);
   }
-  fetchWater(Global.config.gaugeID);
+  fetchWater();
   
   if (weatherRequested === true){
       setTimeout(function () {
@@ -249,13 +250,14 @@ function startup(){
   loadConfiguration();
   loadWaterData();
   
-  if (riverRequested !== true){
-    fetchWater(Global.config.riverGauge);
-  }
-  
-  if (weatherRequested !== true){
+    if (weatherRequested !== true){
     fetchWeather();
   }
+  
+  if (riverRequested !== true){
+    fetchWater();
+  }
+  
 }
 
 Pebble.addEventListener("ready", function(e) {
