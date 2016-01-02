@@ -19,7 +19,7 @@
                 "file": "images/riverwatch.png",
                 "menuIcon": true,
                 "name": "IMAGE_SCREENSHOT",
-                "type": "png"
+                "type": "bitmap"
             },
             {
                 "characterRegex": "[:0-9]",
