@@ -110,9 +110,9 @@ static void window_load(Window *window) {
   GColor8  WEATHER_COLOR  = GColorOrange;
   GColor8 RIVER_COLOR     = GColorCeleste ;
 #else
-  int  TIME_COLOR    = GColorWhite;
-  int WEATHER_COLOR  = GColorWhite; 
-  int RIVER_COLOR    = GColorWhite; 
+  GColor8  TIME_COLOR    = GColorWhite;
+  GColor8 WEATHER_COLOR  = GColorWhite; 
+  GColor8 RIVER_COLOR    = GColorWhite; 
 #endif
   date_layer = text_layer_create(GRect(10, 10, 150, 32));
   text_layer_set_text_color(date_layer, TIME_COLOR);
