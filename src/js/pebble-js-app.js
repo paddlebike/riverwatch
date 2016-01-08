@@ -5,6 +5,9 @@ var CONFIGURATION_URL  = 'http://paddlebike.github.io/riverwatch-config.html';
 var heightParam = "00065";
 var dischargeParam = "00060";
 var tempParam   = "00010";
+var playLow = -1;
+var playOK = 0;
+var playHigh = 1;
 
 var Global = {
   maxRetry:   3,
@@ -13,12 +16,18 @@ var Global = {
     debugEnabled:   false,
     batteryEnabled: true,
     gaugeID:       '01646500',
-    tempScale:     'C',
-    riverScale:    'CFS'
+    tempScale:     'F',
+    riverScale:    'FT',
+    playMinCFS:    6500,
+    playMaxCFS:    20000,
   },
   cache: {
+    temp:          999,
+    condition:     'UNK',
     height:        'UNK',
-    h2temp:        'UNK',
+    discharge:     'UNK',
+    h2temp:        999,
+    play:          0,
     sDate:         'UNK'
   }
 };
@@ -44,7 +53,7 @@ function loadWaterData(){
   if (cacheStr !== null) {
     console.log('we have a cache!');
     Global.cache = JSON.parse(cacheStr);
-    sendWaterData();
+    sendCache();
   }
 }
 
@@ -55,21 +64,37 @@ function saveWaterData(){
 }
 
 
-function sendWaterData(){
-  console.log("Last Height : "    + Global.cache.height);
-  console.log("Last Discharge : " + Global.cache.discharge);
-  console.log("Last updated at :" + Global.cache.sDate);
-  console.log("Last Temp : "      + Global.cache.h2temp);
+function sendCache(){
+
+  var fahrenheit = 0;
+  if (Global.config.tempScale == 'F') {
+    fahrenheit = 1;
+    console.log("Temp scale      : Fahrenheit");
+  } else {
+    console.log("Temp scale      : Centegrade");
+  }
+  console.log("Last Height     : " + Global.cache.height);
+  console.log("Last Discharge  : " + Global.cache.discharge);
+  console.log("Last updated at : " + Global.cache.sDate);
+  console.log("Last Water Temp : " + Global.cache.h2temp);
+  console.log("InPlay          : " + Global.cache.play);
+  console.log("Temp            : " + Global.cache.temp);
+  console.log("Conditions      : " + Global.cache.condition);
   
   var flow = Global.cache.height;
   if (Global.config.riverScale == 'CFS')
     flow = Global.cache.discharge;
-  
-  var h2temp = Math.round(Global.cache.h2temp) +'\xB0C';  
-  if  (Global.config.tempScale == 'F')
-    h2temp = Math.round(Global.cache.h2temp * 9 / 5 + 32) + '\xB0F';
+ 
 
-  Pebble.sendAppMessage({"r_height":flow , "r_temp":h2temp, "4":Global.cache.sDate});
+  Pebble.sendAppMessage({
+    "fahrenheit":fahrenheit,
+    "descr":Global.cache.condition,
+    "temperature":Global.cache.temp,
+    "r_height":flow,
+    "r_temp":Global.cache.h2temp,
+    "gaugeTime":Global.cache.sDate,
+    "play":Global.cache.play  
+  });
 }
 
 function getJson(url, callback) {
@@ -141,12 +166,10 @@ function parseWaterData(waterdata){
 
 
 function fetchYahooWeather(latitude, longitude){
-  var units = "c";
-  if  (Global.config.tempScale == 'F')
-    units = "f";
+ 
   var subselect = 'SELECT woeid FROM geo.placefinder WHERE text="'+latitude+','+longitude+'" AND gflags="R"';
   var neighbor  = 'SELECT * FROM geo.placefinder WHERE text="'+latitude+','+longitude+'" AND gflags="R";';
-  var query     = 'SELECT * FROM weather.forecast WHERE woeid IN ('+subselect+') AND u="'+units+'";';
+  var query     = 'SELECT * FROM weather.forecast WHERE woeid IN ('+subselect+') AND u="c";';
   var multi     = "SELECT * FROM yql.query.multi WHERE queries='"+query+" "+neighbor+"'";
   var url       = "https://query.yahooapis.com/v1/public/yql?format=json&q="+encodeURIComponent(multi)+"&nocache="+new Date().getTime();
   console.log(url);
@@ -157,8 +180,8 @@ function fetchYahooWeather(latitude, longitude){
         throw err;
       }
       console.log("Got condition: " + JSON.stringify(response.query.results.results[0].channel.item.condition));
-      var descr       =  response.query.results.results[0].channel.item.condition.text;
-      var temperature =  response.query.results.results[0].channel.item.condition.temp;      
+      Global.cache.condition =  response.query.results.results[0].channel.item.condition.text;
+      Global.cache.temp =  parseInt(response.query.results.results[0].channel.item.condition.temp);      
       var locale      = response.query.results.results[1].Result.neighborhood;
       if (locale === null) {
         locale = response.query.results.results[1].Result.city;
@@ -167,9 +190,10 @@ function fetchYahooWeather(latitude, longitude){
         locale = 'unknown';
       }
       console.log(locale);
-      console.log(temperature);
-      console.log(descr);
-      Pebble.sendAppMessage({"descr":descr,"temperature":temperature + "\u00B0" + Global.config.tempScale});
+      console.log(Global.cache.temp);
+      console.log(Global.cache.condition);
+      sendCache();
+      
     }
     catch (ex) {
       console.warn("Could not find Yahoo weather data in response: " + ex.message);
@@ -204,18 +228,24 @@ function fetchWater() {
       }
       
       if (waterDB[gaugeID][dischargeParam] !== undefined){
-        Global.cache.discharge = waterDB[gaugeID][dischargeParam].value;
+        Global.cache.discharge = waterDB[gaugeID][dischargeParam].value + 'cfs';
         Global.cache.sDate = waterDB[gaugeID][dischargeParam].dateTime;
+        var discharge = parseInt(Global.cache.discharge);
+        Global.cache.play = playLow;
+        if (discharge > Global.config.playMinCFS)
+          Global.cache.play = playOK;
+        if (discharge > Global.config.playMaxCFS)
+          Global.cache.play = playHigh;
       }
       
       if (waterDB[gaugeID][tempParam] !== undefined){
-        Global.cache.h2temp = waterDB[gaugeID][tempParam].value ;
+        Global.cache.h2temp = parseInt(waterDB[gaugeID][tempParam].value);
         if (Global.cache.sDate === "UNK"){
           Global.cache.sDate = waterDB[gaugeID][tempParam].dateTime;
         }
       }
-      sendWaterData();
       saveWaterData();
+      sendCache();
     }
     catch (ex) {
       console.warn("Could not find USGS data in response: " + ex.message);

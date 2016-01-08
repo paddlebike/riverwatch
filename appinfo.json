@@ -1,9 +1,12 @@
 {
     "appKeys": {
         "descr": 0,
+        "fahrenheit": 6,
         "gaugeTime": 4,
+        "play": 5,
         "r_height": 2,
         "r_temp": 3,
+        "show_battery": 7,
         "temperature": 1
     },
     "capabilities": [
@@ -15,12 +18,6 @@
     "projectType": "native",
     "resources": {
         "media": [
-            {
-                "file": "images/riverwatch.png",
-                "menuIcon": true,
-                "name": "IMAGE_SCREENSHOT",
-                "type": "bitmap"
-            },
             {
                 "characterRegex": "[:0-9]",
                 "compatibility": "2.7",
@@ -43,7 +40,7 @@
         "basalt"
     ],
     "uuid": "c92db639-a931-40c3-8575-623fa9415f96",
-    "versionLabel": "0.3",
+    "versionLabel": "0.4",
     "watchapp": {
         "watchface": true
     }
