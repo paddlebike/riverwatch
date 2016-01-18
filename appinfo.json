@@ -19,6 +19,16 @@
     "resources": {
         "media": [
             {
+                "file": "images/riverwatch.png",
+                "menuIcon": true,
+                "name": "SCREENSHOT",
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt"
+                ],
+                "type": "png"
+            },
+            {
                 "characterRegex": "[:0-9]",
                 "compatibility": "2.7",
                 "file": "fonts/Roboto-Bold.ttf",

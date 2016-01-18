@@ -16,7 +16,7 @@ var Global = {
     debugEnabled:   false,
     batteryEnabled: true,
     gaugeID:       '01646500',
-    tempScale:     'F',
+    tempScale:     'C',
     riverScale:    'FT',
     playMinCFS:    6500,
     playMaxCFS:    20000,
@@ -148,7 +148,7 @@ function parseWaterData(waterdata){
      var siteName = entry.sourceInfo.siteName;
      waterDB[gaugeID] = {name:siteName};
      waterDB[gaugeID][param] = gaugeParam;
-     console.log("Added gauge to waterDB for " + waterDB[gaugeID].name);
+     console.log("Added gauge to waterDB for " + waterDB[gaugeID]);
     } else {
       /* Just add the Param */
       console.log("Just adding param to waterDB");
@@ -228,9 +228,10 @@ function fetchWater() {
       }
       
       if (waterDB[gaugeID][dischargeParam] !== undefined){
-        Global.cache.discharge = waterDB[gaugeID][dischargeParam].value + 'cfs';
+        Global.cache.discharge = waterDB[gaugeID][dischargeParam].value;
         Global.cache.sDate = waterDB[gaugeID][dischargeParam].dateTime;
         var discharge = parseInt(Global.cache.discharge);
+        console.log('Comparing discarge of ' + discharge  + ' with min ' + Global.config.playMinCFS + ' and max ' + Global.config.playMaxCFS);
         Global.cache.play = playLow;
         if (discharge > Global.config.playMinCFS)
           Global.cache.play = playOK;
@@ -332,7 +333,9 @@ Pebble.addEventListener("showConfiguration", function (e) {
       'riverScale'    : Global.config.riverScale,
       'batteryEnabled': Global.config.batteryEnabled ? 'on' : 'off',
       'debugEnabled'  : Global.config.debugEnabled  ?  'on' : 'off',
-      'gaugeID'       : Global.config.gaugeID
+      'gaugeID'       : Global.config.gaugeID,
+      'playMinCFS'    : Global.config.playMinCFS,
+      'playMaxCFS'    : Global.config.playMaxCFS
     };
     var url = CONFIGURATION_URL+'?'+encodeURIComponent(JSON.stringify(options));
     console.log('Configuration requested using url: '+url);
@@ -343,7 +346,7 @@ Pebble.addEventListener("showConfiguration", function (e) {
 Pebble.addEventListener("webviewclosed", function(e) {
   console.log("Event webview closed- START");
   console.log(e.type);
-  console.log(e.response);
+  //console.log(e.response);
   // webview closed
   //Using primitive JSON validity and non-empty check
   // {"text-gaugeID":"016567400","batteryEnabled":"on","debugEnabled":"on","radioF":true,"radioC":false,"radioFT":true,"radioCFS":false}
@@ -351,10 +354,14 @@ Pebble.addEventListener("webviewclosed", function(e) {
     var options = JSON.parse(decodeURIComponent(e.response));
     console.log("Options = " + JSON.stringify(options));
     Global.config.gaugeID        = options.gaugeID;
-    Global.config.riverScale     = options.radioCFS       === 'CFS' ? 'CFS' : 'FT';
-    Global.config.tempScale      = options.radioC         === 'C' ? 'C' : 'F';
-    Global.config.debugEnabled   = options.debugEnabled   === 'true';
-    Global.config.batteryEnabled = options.batteryEnabled === 'on';
+    Global.config.playMinCFS     = parseInt(options.playMinCFS);
+    Global.config.playMaxCFS     = parseInt(options.playMaxCFS);
+    Global.config.riverScale     = options.radioCFS ? 'CFS' : 'FT';
+    Global.config.tempScale      = options.radioC   ? 'C' : 'F';
+
+    Global.config.debugEnabled   = true; //options.debugEnabled   === 'true';
+    Global.config.batteryEnabled = false; //options.batteryEnabled === 'on';
+
     console.log("Configuration complete for " + Global.config);
     saveConfiguration();
     do_update();
