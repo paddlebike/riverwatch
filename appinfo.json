@@ -19,8 +19,42 @@
     "resources": {
         "media": [
             {
+                "file": "images/lime-bluetooth-16.png",
+                "name": "IMAGE_BT_CONNECTED_COLOR",
+                "targetPlatforms": [
+                    "basalt"
+                ],
+                "type": "bitmap"
+            },
+            {
+                "file": "images/red_bluetooth-16.png",
+                "name": "IMAGE_BT_DISCONNECTED_COLOR",
+                "storageFormat": "png",
+                "targetPlatforms": [
+                    "basalt"
+                ],
+                "type": "bitmap"
+            },
+            {
+                "file": "images/icon_disconnected.png",
+                "name": "IMAGE_BT_DISCONNECTED",
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt"
+                ],
+                "type": "bitmap"
+            },
+            {
+                "file": "images/icon_connected.png",
+                "name": "IMAGE_BT_CONNECTED",
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt"
+                ],
+                "type": "bitmap"
+            },
+            {
                 "file": "images/riverwatch.png",
-                "menuIcon": true,
                 "name": "SCREENSHOT",
                 "targetPlatforms": [
                     "aplite",
@@ -46,11 +80,10 @@
     "sdkVersion": "3",
     "shortName": "Riverwatch",
     "targetPlatforms": [
-        "aplite",
         "basalt"
     ],
     "uuid": "c92db639-a931-40c3-8575-623fa9415f96",
-    "versionLabel": "0.4",
+    "versionLabel": "0.5",
     "watchapp": {
         "watchface": true
     }

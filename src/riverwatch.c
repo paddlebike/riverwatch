@@ -2,6 +2,10 @@
 
 static Window *window;
 
+//Blutetooth Status
+static GBitmap *bluetooth_image;
+static BitmapLayer *bluetooth_layer;
+
 static TextLayer *date_layer;
 static TextLayer *time_layer;
 static TextLayer *gauge_time_layer;
@@ -36,6 +40,8 @@ static char h2o_buff[10];
 #define RIVER_COLOR_LOW  GColorCeleste
 #define RIVER_COLOR_PLAY GColorBrightGreen
 #define RIVER_COLOR_HIGH GColorRed
+#define IMAGE_BT_CONNECTED    RESOURCE_ID_IMAGE_BT_CONNECTED_COLOR
+#define IMAGE_BT_DISCONNECTED RESOURCE_ID_IMAGE_BT_DISCONNECTED_COLOR
 #else
 #define TIME_COLOR       GColorWhite
 #define WEATHER_COLOR    GColorWhite
@@ -45,7 +51,32 @@ static char h2o_buff[10];
 #define RIVER_COLOR_LOW  GColorWhite
 #define RIVER_COLOR_PLAY GColorWhite
 #define RIVER_COLOR_HIGH GColorWhite
+#define IMAGE_BT_CONNECTED    RESOURCE_ID_IMAGE_BT_CONNECTED
+#define IMAGE_BT_DISCONNECTED RESOURCE_ID_IMAGE_BT_DISCONNECTED
 #endif
+
+
+/*
+ *METHODS
+ */
+//Used to set maintain which image is showing. Switch old images with new ones
+static void set_container_image(GBitmap **bmp_image, BitmapLayer *bmp_layer, const int resource_id, GPoint origin){
+	//Temp variable for old image
+	GBitmap *old_image = *bmp_image;
+
+	//Replace old image with new image //(*bmp_image)->bounds.size
+	*bmp_image = gbitmap_create_with_resource(resource_id);
+	GRect frame = (GRect) {
+		.origin = origin,
+		.size = gbitmap_get_bounds(*bmp_image).size
+	};
+	bitmap_layer_set_bitmap(bmp_layer, *bmp_image);
+	layer_set_frame(bitmap_layer_get_layer(bmp_layer), frame);
+
+	//Get rid of the old image if it exits
+	if (old_image != NULL)
+		gbitmap_destroy(old_image);
+}
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
 
@@ -89,7 +120,6 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   data = dict_find(iterator, RIVER_TEMP_KEY);
   if (data) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Got river temp key: value %d", data->value->int16);
-    char buff[10];
     int temp = data->value->int16;
     if      (temp < 10) text_layer_set_text_color(river_temp_layer, COLD_COLOR);
     else if (temp > 30) text_layer_set_text_color(river_temp_layer, HOT_COLOR);
@@ -186,6 +216,13 @@ void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
   }
 }
 
+static void handle_bluetooth(bool connected) {
+	if(connected)
+		set_container_image(&bluetooth_image, bluetooth_layer, IMAGE_BT_CONNECTED, GPoint(125, 100));
+	else	
+		set_container_image(&bluetooth_image, bluetooth_layer, IMAGE_BT_DISCONNECTED, GPoint(125, 100));
+}
+
 static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
 
@@ -209,7 +246,27 @@ static void window_load(Window *window) {
   text_layer_set_font(gauge_time_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_21)));
   text_layer_set_text_alignment(gauge_time_layer, GTextAlignmentLeft);
   layer_add_child(window_layer, text_layer_get_layer(gauge_time_layer));
-
+/*
+	connection_layer = text_layer_create(GRect(115, 95, 60, 28));
+	text_layer_set_text_color(connection_layer, GColorWhite);
+	text_layer_set_background_color(connection_layer, GColorClear);
+	text_layer_set_font(connection_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_21)));
+	text_layer_set_text_alignment(connection_layer, GTextAlignmentLeft);
+	handle_bluetooth(bluetooth_connection_service_peek());
+  layer_add_child(window_layer, text_layer_get_layer(connection_layer));
+*/
+  
+  //Set up bluetooth status //.size = bluetooth_image->bounds.size
+	bluetooth_image = gbitmap_create_with_resource(IMAGE_BT_CONNECTED);
+	GRect frame1 = (GRect) {
+    .origin = { .x = 125, .y = 100 },
+    .size = gbitmap_get_bounds(bluetooth_image).size
+	};
+	bluetooth_layer = bitmap_layer_create(frame1);
+	bitmap_layer_set_bitmap(bluetooth_layer, bluetooth_image);
+	layer_add_child(window_layer, bitmap_layer_get_layer(bluetooth_layer));
+  
+  
   descr_layer = text_layer_create(GRect(5, 115, 70, 28));
   text_layer_set_text_color(descr_layer, WEATHER_COLOR);
   text_layer_set_background_color(descr_layer, GColorClear);
@@ -261,9 +318,14 @@ static void window_unload(Window *window) {
   text_layer_destroy(time_layer);
   text_layer_destroy(descr_layer);
   text_layer_destroy(gauge_time_layer);
+  //text_layer_destroy(connection_layer);
   text_layer_destroy(temperature_layer);
   text_layer_destroy(river_height_layer);
   text_layer_destroy(river_temp_layer);
+  
+  layer_remove_from_parent(bitmap_layer_get_layer(bluetooth_layer));
+	bitmap_layer_destroy(bluetooth_layer);
+	gbitmap_destroy(bluetooth_image);
 }
 
 static void init(void) {
@@ -292,10 +354,12 @@ static void init(void) {
   const bool animated = true;
   window_stack_push(window, animated);
   tick_timer_service_subscribe(MINUTE_UNIT, handle_minute_tick);
+  bluetooth_connection_service_subscribe(handle_bluetooth);
 }
 
 static void deinit(void) {
   tick_timer_service_unsubscribe();
+  bluetooth_connection_service_unsubscribe();
   window_destroy(window);
 }
 
