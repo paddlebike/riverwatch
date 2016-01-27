@@ -167,12 +167,14 @@ function parseWaterData(waterdata){
 
 function fetchYahooWeather(latitude, longitude){
  
-  var subselect = 'SELECT woeid FROM geo.placefinder WHERE text="'+latitude+','+longitude+'" AND gflags="R"';
-  var neighbor  = 'SELECT * FROM geo.placefinder WHERE text="'+latitude+','+longitude+'" AND gflags="R";';
+  var subselect = 'SELECT woeid FROM geo.places WHERE text="('+latitude+','+longitude+')" limit 1';
+  var neighbor  = 'SELECT * FROM geo.places WHERE text="('+latitude+','+longitude+')" limit 1;';
   var query     = 'SELECT * FROM weather.forecast WHERE woeid IN ('+subselect+') AND u="c";';
   var multi     = "SELECT * FROM yql.query.multi WHERE queries='"+query+" "+neighbor+"'";
+  console.log('Query:  ' + multi);
   var url       = "https://query.yahooapis.com/v1/public/yql?format=json&q="+encodeURIComponent(multi)+"&nocache="+new Date().getTime();
   console.log(url);
+
   getJson(url, function(err, response){
     try 
     {
