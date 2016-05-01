@@ -243,9 +243,16 @@ function fetchWater() {
       
       if (waterDB[gaugeID][tempParam] !== undefined){
         Global.cache.h2temp = parseInt(waterDB[gaugeID][tempParam].value);
-        if (Global.cache.sDate === "UNK"){
-          Global.cache.sDate = waterDB[gaugeID][tempParam].dateTime;
-        }
+      }
+ 
+      if (Global.cache.sDate != waterDB[gaugeID][dischargeParam].dateTime && Global.cache.play == playOK){
+          var title = waterDB[gaugeID].name + ' update at ' + waterDB[gaugeID][tempParam].dateTime;
+          var text = 'Height   : ' + waterDB[gaugeID][heightParam].value + '\n'  + 'Discharge: ' + waterDB[gaugeID][dischargeParam].value + '\n';
+          if (waterDB[gaugeID][tempParam] !== undefined){
+            text = text + 'Temp     : ' + waterDB[gaugeID][tempParam].value + '\n';
+          }
+          // Show the notification
+          Pebble.showSimpleNotificationOnPebble(title, text);
       }
       saveWaterData();
       sendCache();
