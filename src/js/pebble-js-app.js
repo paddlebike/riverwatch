@@ -224,38 +224,53 @@ function fetchWater() {
       var site_name = waterDB[gaugeID].name;
       console.log(site_name);
       
-      if (waterDB[gaugeID][heightParam] !== undefined){
-        Global.cache.height = waterDB[gaugeID][heightParam].value + 'ft';
-        Global.cache.sDate = waterDB[gaugeID][heightParam].dateTime;
-      }
-      
-      if (waterDB[gaugeID][dischargeParam] !== undefined){
-        Global.cache.discharge = waterDB[gaugeID][dischargeParam].value;
-        Global.cache.sDate = waterDB[gaugeID][dischargeParam].dateTime;
-        var discharge = parseInt(Global.cache.discharge);
-        console.log('Comparing discarge of ' + discharge  + ' with min ' + Global.config.playMinCFS + ' and max ' + Global.config.playMaxCFS);
-        Global.cache.play = playLow;
-        if (discharge > Global.config.playMinCFS)
-          Global.cache.play = playOK;
-        if (discharge > Global.config.playMaxCFS)
-          Global.cache.play = playHigh;
-      }
-      
-      if (waterDB[gaugeID][tempParam] !== undefined){
-        Global.cache.h2temp = parseInt(waterDB[gaugeID][tempParam].value);
-      }
- 
-      if (Global.cache.sDate != waterDB[gaugeID][dischargeParam].dateTime && Global.cache.play == playOK){
-          var title = waterDB[gaugeID].name + ' update at ' + waterDB[gaugeID][tempParam].dateTime;
-          var text = 'Height   : ' + waterDB[gaugeID][heightParam].value + '\n'  + 'Discharge: ' + waterDB[gaugeID][dischargeParam].value + '\n';
+      if (Global.cache.sDate != waterDB[gaugeID][heightParam].dateTime){
+        
+        console.log('We have an updated value');
+        
+        if (waterDB[gaugeID][heightParam] !== undefined){
+          Global.cache.height = waterDB[gaugeID][heightParam].value + 'ft';
+          Global.cache.sDate = waterDB[gaugeID][heightParam].dateTime;
+        }
+        
+        if (waterDB[gaugeID][dischargeParam] !== undefined){
+          Global.cache.discharge = waterDB[gaugeID][dischargeParam].value;
+          Global.cache.sDate = waterDB[gaugeID][dischargeParam].dateTime;
+          var discharge = parseInt(Global.cache.discharge);
+          console.log('Comparing discarge of ' + discharge  + ' with min ' + Global.config.playMinCFS + ' and max ' + Global.config.playMaxCFS);
+          Global.cache.play = playLow;
+          if (discharge > Global.config.playMinCFS)
+            Global.cache.play = playOK;
+          if (discharge > Global.config.playMaxCFS)
+            Global.cache.play = playHigh;
+        }
+        
+        if (waterDB[gaugeID][tempParam] !== undefined){
+          Global.cache.h2temp = parseInt(waterDB[gaugeID][tempParam].value);
+        }
+  
+        
+        if (Global.cache.play == playOK) {
+          console.log('We are in Play');
+          var title = 'Guage Update'; // waterDB[gaugeID].name;
+          var text = 'Time   : ' + waterDB[gaugeID][tempParam].dateTime   + '\n' +
+                     'Height : ' + waterDB[gaugeID][heightParam].value    + '\n'  +
+                     'Dscg   : ' + waterDB[gaugeID][dischargeParam].value + '\n';
           if (waterDB[gaugeID][tempParam] !== undefined){
-            text = text + 'Temp     : ' + waterDB[gaugeID][tempParam].value + '\n';
+            text = text + 'Temp   : ' + waterDB[gaugeID][tempParam].value + '\n';
           }
           // Show the notification
+          console.log('sending the notification');
           Pebble.showSimpleNotificationOnPebble(title, text);
+        } else {
+          console.log('we are not in play.  No notification');
+        }
+        
+        saveWaterData();
+        sendCache();      
+      } else {
+        console.log('Update is old');
       }
-      saveWaterData();
-      sendCache();
     }
     catch (ex) {
       console.warn("Could not find USGS data in response: " + ex.message);
