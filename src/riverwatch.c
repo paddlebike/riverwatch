@@ -21,16 +21,6 @@ static char air_buff[10];
 static char h2o_buff[10];
 
 
-#define   SHOW_BATTERY_KEY        7
-#define   FAHRENHEIT_KEY          6
-#define   PLAY_KEY                5
-#define   GAUGE_TIME_KEY          4
-#define   RIVER_TEMP_KEY          3
-#define   RIVER_HEIGHT_KEY        2
-#define   WEATHER_TEMPERATURE_KEY 1
-#define   WEATHER_DESCR_KEY       0
-
-
 #ifdef PBL_COLOR
 #define TIME_COLOR       GColorWhite
 #define WEATHER_COLOR    GColorOrange
@@ -82,18 +72,18 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 
   Tuple * data = NULL;
   
-  data = dict_find(iterator, FAHRENHEIT_KEY);
+  data = dict_find(iterator, MESSAGE_KEY_fahrenheit);
   if (data) {
     fahrenheit = data->value->int16;
   }
   
-  data = dict_find(iterator, WEATHER_DESCR_KEY);
+  data = dict_find(iterator, MESSAGE_KEY_descr);
   if (data) {
     text_layer_set_text(descr_layer, data->value->cstring);
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Setting conditions: %s", data->value->cstring);
   }
   
-  data = dict_find(iterator, WEATHER_TEMPERATURE_KEY);
+  data = dict_find(iterator, MESSAGE_KEY_temperature);
   if (data) {
     int temp = data->value->int16;
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Got air temp key: value %d", data->value->int16);
@@ -111,13 +101,13 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     text_layer_set_text(temperature_layer, air_buff);
   }
   
-  data = dict_find(iterator, RIVER_HEIGHT_KEY);
+  data = dict_find(iterator, MESSAGE_KEY_r_height);
   if (data) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Got river height key: value %s", data->value->cstring);
     text_layer_set_text(river_height_layer, data->value->cstring);
   }
   
-  data = dict_find(iterator, RIVER_TEMP_KEY);
+  data = dict_find(iterator, MESSAGE_KEY_r_temp);
   if (data) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Got river temp key: value %d", data->value->int16);
     int temp = data->value->int16;
@@ -134,7 +124,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     text_layer_set_text(river_temp_layer, h2o_buff);
   }
 
-  data = dict_find(iterator, PLAY_KEY);
+  data = dict_find(iterator, MESSAGE_KEY_play);
   if (data) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Got river height play key");
     int play = data->value->int16;
@@ -145,7 +135,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   }
 
   
-  Tuple *r_time = dict_find(iterator, GAUGE_TIME_KEY);
+  Tuple *r_time = dict_find(iterator, MESSAGE_KEY_gaugeTime);
   if (r_time) {
     text_layer_set_text(gauge_time_layer, r_time->value->cstring);
   }
@@ -246,15 +236,7 @@ static void window_load(Window *window) {
   text_layer_set_font(gauge_time_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_21)));
   text_layer_set_text_alignment(gauge_time_layer, GTextAlignmentLeft);
   layer_add_child(window_layer, text_layer_get_layer(gauge_time_layer));
-/*
-	connection_layer = text_layer_create(GRect(115, 95, 60, 28));
-	text_layer_set_text_color(connection_layer, GColorWhite);
-	text_layer_set_background_color(connection_layer, GColorClear);
-	text_layer_set_font(connection_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_CONDENSED_21)));
-	text_layer_set_text_alignment(connection_layer, GTextAlignmentLeft);
-	handle_bluetooth(bluetooth_connection_service_peek());
-  layer_add_child(window_layer, text_layer_get_layer(connection_layer));
-*/
+
   
   //Set up bluetooth status //.size = bluetooth_image->bounds.size
 	bluetooth_image = gbitmap_create_with_resource(IMAGE_BT_CONNECTED);
@@ -297,18 +279,7 @@ static void window_load(Window *window) {
   text_layer_set_text_alignment(river_temp_layer, GTextAlignmentRight);
   text_layer_set_text(river_temp_layer, "68f");
   layer_add_child(window_layer, text_layer_get_layer(river_temp_layer));
-/*
-  Tuplet initial_values[] = {
-    TupletCString(WEATHER_DESCR_KEY, "Surf"),
-    TupletCString(WEATHER_TEMPERATURE_KEY, "99\u00B0C"),
-    TupletCString(RIVER_HEIGHT_KEY, "0.0ft"),
-    TupletCString(RIVER_TEMP_KEY, "00.0\u00B0C"),
-    TupletCString(GAUGE_TIME_KEY, "00:00"),
-  };
 
-  app_sync_init(&sync, sync_buffer, sizeof(sync_buffer), initial_values, ARRAY_LENGTH(initial_values),
-      NULL, NULL, NULL);
-*/
   send_cmd();
 }
 
@@ -318,7 +289,6 @@ static void window_unload(Window *window) {
   text_layer_destroy(time_layer);
   text_layer_destroy(descr_layer);
   text_layer_destroy(gauge_time_layer);
-  //text_layer_destroy(connection_layer);
   text_layer_destroy(temperature_layer);
   text_layer_destroy(river_height_layer);
   text_layer_destroy(river_temp_layer);

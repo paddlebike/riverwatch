@@ -32,6 +32,7 @@ var Global = {
   }
 };
 
+
 function saveConfiguration(){
   var configStr = JSON.stringify(Global.config);
   console.log('saveConfiguration - configuration: ' + configStr);
@@ -85,16 +86,24 @@ function sendCache(){
   if (Global.config.riverScale == 'CFS')
     flow = Global.cache.discharge;
  
+  // Require the keys' numeric values.
+  var keys = require('message_keys');
+  console.log('keys: ' + JSON.stringify(keys));
+  
+  var dict = {};
+  dict[keys.fahrenheit]  = fahrenheit;
+  dict[keys.descr]       = Global.cache.condition;
+  dict[keys.temperature] = Global.cache.temp;
+  dict[keys.r_height]    = flow;
+  dict[keys.r_temp]      = Global.cache.h2temp;
+  dict[keys.gaugeTime]   = Global.cache.sDate;
+  dict[keys.play]        = Global.cache.play;
 
-  Pebble.sendAppMessage({
-    "fahrenheit":fahrenheit,
-    "descr":Global.cache.condition,
-    "temperature":Global.cache.temp,
-    "r_height":flow,
-    "r_temp":Global.cache.h2temp,
-    "gaugeTime":Global.cache.sDate,
-    "play":Global.cache.play  
-  });
+  Pebble.sendAppMessage(dict, function() {
+  console.log('Message sent successfully: ' + JSON.stringify(dict));
+              }, function(e) {
+                console.log('Message failed: ' + JSON.stringify(e));
+              });
 }
 
 function getJson(url, callback) {

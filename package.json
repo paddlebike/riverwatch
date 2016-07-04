@@ -1,0 +1,96 @@
+{
+    "author": "Ken Andrews",
+    "dependencies": {},
+    "keywords": [],
+    "name": "riverwatch",
+    "pebble": {
+        "capabilities": [
+            "location",
+            "configurable"
+        ],
+        "displayName": "Riverwatch",
+        "enableMultiJS": true,
+        "messageKeys": [
+            "descr",
+            "temperature",
+            "r_height",
+            "r_temp",
+            "gaugeTime",
+            "play",
+            "fahrenheit"
+        ],
+        "projectType": "native",
+        "resources": {
+            "media": [
+                {
+                    "file": "images/lime-bluetooth-16.png",
+                    "name": "IMAGE_BT_CONNECTED_COLOR",
+                    "targetPlatforms": [
+                        "basalt"
+                    ],
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/red_bluetooth-16.png",
+                    "name": "IMAGE_BT_DISCONNECTED_COLOR",
+                    "storageFormat": "png",
+                    "targetPlatforms": [
+                        "basalt"
+                    ],
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/icon_disconnected.png",
+                    "name": "IMAGE_BT_DISCONNECTED",
+                    "targetPlatforms": [
+                        "aplite",
+                        "basalt"
+                    ],
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/icon_connected.png",
+                    "name": "IMAGE_BT_CONNECTED",
+                    "targetPlatforms": [
+                        "aplite",
+                        "basalt"
+                    ],
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/riverwatch.png",
+                    "menuIcon": true,
+                    "name": "SCREENSHOT",
+                    "targetPlatforms": [
+                        "aplite",
+                        "basalt"
+                    ],
+                    "type": "png"
+                },
+                {
+                    "characterRegex": "[:0-9]",
+                    "compatibility": "2.7",
+                    "file": "fonts/Roboto-Bold.ttf",
+                    "name": "FONT_ROBOTO_BOLD_SUBSET_49",
+                    "type": "font"
+                },
+                {
+                    "compatibility": "2.7",
+                    "file": "fonts/Roboto-Condensed.ttf",
+                    "name": "FONT_ROBOTO_CONDENSED_21",
+                    "type": "font"
+                }
+            ]
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "aplite",
+            "basalt"
+        ],
+        "uuid": "c92db639-a931-40c3-8575-623fa9415f96",
+        "watchapp": {
+            "watchface": true
+        }
+    },
+    "version": "0.5.0"
+}
