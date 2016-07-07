@@ -32,7 +32,6 @@ var Global = {
   }
 };
 
-
 function saveConfiguration(){
   var configStr = JSON.stringify(Global.config);
   console.log('saveConfiguration - configuration: ' + configStr);
@@ -173,47 +172,6 @@ function parseWaterData(waterdata){
   return(waterDB);
 }
 
-
-function fetchYahooWeather(latitude, longitude){
- 
-  var subselect = 'SELECT woeid FROM geo.places WHERE text="('+latitude+','+longitude+')" limit 1';
-  var neighbor  = 'SELECT * FROM geo.places WHERE text="('+latitude+','+longitude+')" limit 1;';
-  var query     = 'SELECT * FROM weather.forecast WHERE woeid IN ('+subselect+') AND u="c";';
-  var multi     = "SELECT * FROM yql.query.multi WHERE queries='"+query+" "+neighbor+"'";
-  console.log('Query:  ' + multi);
-  var url       = "https://query.yahooapis.com/v1/public/yql?format=json&q="+encodeURIComponent(multi)+"&nocache="+new Date().getTime();
-  console.log(url);
-
-  getJson(url, function(err, response){
-    try 
-    {
-      if (err) {
-        throw err;
-      }
-      console.log("Got condition: " + JSON.stringify(response.query.results.results[0].channel.item.condition));
-      Global.cache.condition =  response.query.results.results[0].channel.item.condition.text;
-      Global.cache.temp =  parseInt(response.query.results.results[0].channel.item.condition.temp);      
-      var locale      = response.query.results.results[1].Result.neighborhood;
-      if (locale === null) {
-        locale = response.query.results.results[1].Result.city;
-      }
-      if (locale === null) {
-        locale = 'unknown';
-      }
-      console.log(locale);
-      console.log(Global.cache.temp);
-      console.log(Global.cache.condition);
-      sendCache();
-      
-    }
-    catch (ex) {
-      console.warn("Could not find Yahoo weather data in response: " + ex.message);
-    }
-    weatherRequested = false;
-  });
-  weatherRequested = true;
-}
-
 function fetchWater() {
   var gaugeID = Global.config.gaugeID; //'01646500';
   console.log("fetchWater called with gaugeID " + gaugeID);
@@ -291,18 +249,53 @@ function fetchWater() {
   console.log("River Request Completed");
 }
 
+function fetchOWMWeather(latitude, longitude){
+  
+  var url = 'http://api.openweathermap.org/data/2.5/weather?lat=' +
+      latitude + '&lon=' + longitude + '&appid=9074a4be3ea0765aaa0f1a4873e80c99';
+  console.log('owm-weather: Location success. Contacting OpenWeatherMap.org...');
+  console.log(url);
+
+  getJson(url, function(err, response){
+    try 
+    {
+      if (err) {
+        throw err;
+      }
+      console.log("Got condition: " + JSON.stringify(response.weather[0]));
+      Global.cache.condition =  response.weather[0].description;
+      Global.cache.temp =  parseInt(response.main.temp) - 273;      
+      var locale      = response.name;
+      if (locale === null) {
+        locale = response.name;
+      }
+      if (locale === null) {
+        locale = 'unknown';
+      }
+      console.log(locale);
+      console.log(Global.cache.temp);
+      console.log(Global.cache.condition);
+      sendCache();
+      
+    }
+    catch (ex) {
+      console.warn("Could not find Open Weather Map weather data in response: " + ex.message);
+    }
+    weatherRequested = false;
+  });
+  weatherRequested = true;
+}
+
+
 function locationSuccess(pos) {
   var coordinates = pos.coords;
   console.log("Got coordinates: " + JSON.stringify(coordinates));
-  fetchYahooWeather(coordinates.latitude, coordinates.longitude);
+  fetchOWMWeather(coordinates.latitude, coordinates.longitude);
 }
 
 function locationError(err) {
   console.warn('location error (' + err.code + '): ' + err.message);
-  Pebble.sendAppMessage({
-    "wCity":"Loc Unavailable",
-    "temperature":"N/A"
-  });
+  Pebble.sendAppMessage({"temperature":"N/A"});
 }
 
 function fetchWeather(){
@@ -325,6 +318,7 @@ function do_update(){
       }, 5000);
   }
   fetchWeather();
+  
 }
 
 function startup(){
@@ -342,6 +336,7 @@ function startup(){
   
 }
 
+
 Pebble.addEventListener("ready", function(e) {
   console.log("Event ready - START!");
   console.log(e.type);
@@ -350,7 +345,7 @@ Pebble.addEventListener("ready", function(e) {
 
 Pebble.addEventListener("appmessage", function(e) {
   console.log("Event appmessage - START!");
-  console.log(e.type);
+  console.log('appmessage: ' + JSON.stringify(e.payload));
   do_update();
   console.log("Event appmessage - DONE!");
 });
@@ -397,7 +392,7 @@ Pebble.addEventListener("webviewclosed", function(e) {
 
     console.log("Configuration complete for " + Global.config);
     saveConfiguration();
-    do_update();
+    //do_update();
   } else {
     console.log("Cancelled");
   }

@@ -1,5 +1,4 @@
 #include "pebble.h"
-
 static Window *window;
 
 //Blutetooth Status
@@ -67,6 +66,61 @@ static void set_container_image(GBitmap **bmp_image, BitmapLayer *bmp_layer, con
 	if (old_image != NULL)
 		gbitmap_destroy(old_image);
 }
+/*
+static void weather_callback(OWMWeatherInfo *info, OWMWeatherStatus status) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "weather_callback got status: %d", status);
+  switch(status) {
+    case OWMWeatherStatusAvailable:
+    {
+      // Debug stuff
+      static char s_buffer[256];
+      snprintf(s_buffer, sizeof(s_buffer),
+        "Temperature (K/C/F): %d/%d/%d\n\nDescription/short:\n%s/%s\n\nPressure: %d\n\nWind speed/dir: %d/%d",
+        info->temp_k, info->temp_c, info->temp_f, info->description,
+        info->description_short, info->pressure, info->wind_speed, info->wind_direction);
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "Weather info: %s", s_buffer);
+
+      // Set our description
+      text_layer_set_text(descr_layer, info->description_short);
+      
+      // Set the air temp
+      if  (info->temp_c < 0 )
+        text_layer_set_text_color(temperature_layer, COLD_COLOR);
+      else if (info->temp_c > 30) 
+        text_layer_set_text_color(temperature_layer, HOT_COLOR);
+      else 
+        text_layer_set_text_color(temperature_layer, WARM_COLOR);
+      
+      if (fahrenheit) {
+        snprintf(s_buffer, sizeof(air_buff), "%df", info->temp_f);
+      } else {
+        snprintf(s_buffer, sizeof(air_buff), "%dc", info->temp_c);
+      }
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "Setting air temp: %s", s_buffer);
+      text_layer_set_text(temperature_layer, s_buffer);
+      }
+      break;
+    case OWMWeatherStatusNotYetFetched:
+      text_layer_set_text(descr_layer, "NotYet");
+      break;
+    case OWMWeatherStatusBluetoothDisconnected:
+      text_layer_set_text(descr_layer, "BtoothDown");
+      break;
+    case OWMWeatherStatusPending:
+      text_layer_set_text(descr_layer, "Pending");
+      break;
+    case OWMWeatherStatusFailed:
+      text_layer_set_text(descr_layer, "Failed");
+      break;
+    case OWMWeatherStatusBadKey:
+      text_layer_set_text(descr_layer, "BadKey");
+      break;
+    case OWMWeatherStatusLocationUnavailable:
+      text_layer_set_text(descr_layer, "WhereAmI");
+      break;
+  }
+}
+*/
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
 
@@ -283,6 +337,11 @@ static void window_load(Window *window) {
   send_cmd();
 }
 
+
+static void js_ready_handler(void *context) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "js_ready_handler called:");
+}
+
 static void window_unload(Window *window) {
   app_sync_deinit(&sync);
   text_layer_destroy(date_layer);
@@ -298,8 +357,7 @@ static void window_unload(Window *window) {
 	gbitmap_destroy(bluetooth_image);
 }
 
-static void init(void) {
-  
+static void init(void) {  
   // Register callbacks
   app_message_register_inbox_received(inbox_received_callback);
   app_message_register_inbox_dropped(inbox_dropped_callback);
@@ -325,6 +383,7 @@ static void init(void) {
   window_stack_push(window, animated);
   tick_timer_service_subscribe(MINUTE_UNIT, handle_minute_tick);
   bluetooth_connection_service_subscribe(handle_bluetooth);
+  app_timer_register(3000, js_ready_handler, NULL);
 }
 
 static void deinit(void) {
